@@ -170,31 +170,81 @@ docker-stop.bat
 
 **For Linux/Mac:**
 ```bash
-# 1. Install Docker and Docker Compose
+# 1. Fix Docker installation conflicts (if you get containerd errors)
+# Remove conflicting packages first
+sudo apt remove --purge docker.io containerd runc
+sudo apt autoremove
+
+# 2. Install Docker from official repository (Recommended Method)
+# Add Docker's official GPG key
 sudo apt update
-sudo apt install docker.io docker-compose
+sudo apt install ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+# Add Docker repository
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker Engine
+sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Start and enable Docker
 sudo systemctl start docker
 sudo systemctl enable docker
 
-# 2. Add user to docker group (optional, to run without sudo)
+# Verify installation
+sudo docker run hello-world
+
+# 3. Add user to docker group (to run without sudo)
 sudo usermod -aG docker $USER
 newgrp docker
 
-# 3. Configure environment
+# Verify docker works without sudo
+docker ps
+
+# 4. Navigate to project directory
+cd /path/to/SweepingApps
+
+# 5. Configure environment
 cp docker.env .env
 nano .env  # Edit with your configuration
 
-# 4. Start all services
+# 6. Start all services (use 'docker compose' not 'docker-compose' for new version)
+docker compose up --build -d
+
+# Or if using docker-compose v1
 docker-compose up --build -d
 
-# 5. Check status
-docker-compose ps
+# 7. Check status
+docker compose ps
 
-# 6. View logs
-docker-compose logs -f
+# 8. View logs
+docker compose logs -f
 
-# 7. Stop services
-docker-compose down
+# 9. Stop services
+docker compose down
+```
+
+**Alternative: Use Ubuntu's Docker (Simpler but older version):**
+```bash
+# If you don't have conflicts, this simpler method works
+sudo apt update
+sudo apt install docker.io
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Install docker-compose separately if needed
+sudo apt install docker-compose
+
+# Or install docker-compose v2
+sudo apt install docker-compose-v2
 ```
 
 **📋 Docker Setup Files:**
@@ -1872,6 +1922,54 @@ docker-compose logs -f
 ## 🐧 Linux Docker Troubleshooting
 
 ### Linux-Specific Issues
+
+#### 0. containerd.io Conflicts Error (COMMON)
+**Error:** `containerd.io : Conflicts: containerd`
+
+**Solution 1 - Use Official Docker Repository (Recommended):**
+```bash
+# Remove conflicting packages
+sudo apt remove --purge docker.io containerd runc
+sudo apt autoremove
+
+# Install from Docker official repository
+sudo apt update
+sudo apt install ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+**Solution 2 - Use Ubuntu's Docker (Simpler):**
+```bash
+# Just install what's available
+sudo apt update
+sudo apt install docker.io
+sudo systemctl start docker
+sudo systemctl enable docker
+```
+
+**Verification:**
+```bash
+# Check Docker version
+docker --version
+
+# Test Docker
+sudo docker run hello-world
+
+# Check if docker-compose works
+docker compose version
+# or
+docker-compose --version
+```
 
 #### 1. Docker Permission Denied
 ```bash
