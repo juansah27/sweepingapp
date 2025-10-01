@@ -22,6 +22,10 @@ A modern web application built with FastAPI (backend) and React (frontend) for e
 
 ## 🔥 Recent Updates
 
+- ✅ **Critical Bug Fixes**: Fixed 6 logic issues in upload process (missing success field, race conditions, memory leaks)
+- ✅ **Linux Docker Support**: Complete Docker setup guide for Linux/Mac with network configuration
+- ✅ **Manual Linux Setup**: Added comprehensive manual setup guide for development
+- ✅ **Enhanced Documentation**: Improved README with Linux-specific troubleshooting and commands
 - ✅ **Bulk Operations**: Added Excel/CSV bulk management for Marketplace Info, Brand Shops, and Brand Accounts
 - ✅ **Template Downloads**: Excel template generation for all bulk operations
 - ✅ **Marketplace Apps Control**: Comprehensive disable system for marketplace apps
@@ -33,8 +37,14 @@ A modern web application built with FastAPI (backend) and React (frontend) for e
 ## 📋 Table of Contents
 
 - [🚀 Features](#-features)
+- [🔥 Recent Updates](#-recent-updates)
 - [📁 File Upload Requirements](#file-upload-requirements)
 - [🗄️ Database Schema](#database-schema)
+- [💻 Tech Stack](#tech-stack)
+- [📦 Installation & Setup](#installation--setup)
+  - [🐳 Option 1: Docker Deployment](#-option-1-docker-deployment-recommended)
+  - [🐧 Option 2: Ubuntu Server Deployment](#-option-2-ubuntu-server-deployment)
+  - [🔧 Option 3: Manual Linux Setup](#-option-3-manual-linux-setup-development)
 - [⚡ Performance Optimizations](#-performance-optimizations)
 - [🐳 Docker Services](#-docker-services)
 - [🛠️ Development Setup (Hybrid Mode)](#️-development-setup-hybrid-mode)
@@ -140,21 +150,105 @@ CREATE TABLE uploaded_orders (
 #### 🐳 Option 1: Docker Deployment (Recommended)
 **Fully containerized with optimized performance:**
 
+**For Windows:**
 ```bash
 # Start all services with Docker
-docker-compose up --build -d
+docker-start.bat
 
-# Or use the provided script
-docker-start.bat  # Windows
+# Or manually
+docker-compose up --build -d
 
 # Check status
 docker-compose ps
 
 # View logs
-docker-compose logs -f
+docker-logs.bat
 
 # Stop services
+docker-stop.bat
+```
+
+**For Linux/Mac:**
+```bash
+# 1. Install Docker and Docker Compose
+sudo apt update
+sudo apt install docker.io docker-compose
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# 2. Add user to docker group (optional, to run without sudo)
+sudo usermod -aG docker $USER
+newgrp docker
+
+# 3. Configure environment
+cp docker.env .env
+nano .env  # Edit with your configuration
+
+# 4. Start all services
+docker-compose up --build -d
+
+# 5. Check status
+docker-compose ps
+
+# 6. View logs
+docker-compose logs -f
+
+# 7. Stop services
 docker-compose down
+```
+
+**📋 Docker Setup Files:**
+- `DOCKER_README.md` - Complete Docker setup guide
+- `docker-compose.yml` - Service orchestration
+- `docker.env` - Environment template
+- `Dockerfile.backend` - Backend container configuration
+- `Dockerfile.frontend` - Frontend container configuration
+- `nginx.conf` - Nginx web server configuration
+
+**Access Points (Docker):**
+- **Frontend**: http://localhost:80
+- **Backend API**: http://localhost:8001
+- **API Documentation**: http://localhost:8001/docs
+- **PostgreSQL**: localhost:5432
+- **Redis**: localhost:6379
+
+**Docker Management Commands:**
+```bash
+# Rebuild specific service
+docker-compose up --build -d backend
+
+# View service logs
+docker-compose logs -f backend
+
+# Restart service
+docker-compose restart backend
+
+# Database backup
+docker exec sweeping-apps-postgres pg_dump -U sweeping_user sweeping_apps > backup.sql
+
+# Database restore
+docker exec -i sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps < backup.sql
+
+# Clean up (removes volumes - WARNING: deletes data)
+docker-compose down -v
+```
+
+**Linux-Specific Network Setup:**
+```bash
+# Find your server IP
+ip addr show | grep inet
+# or
+hostname -I
+
+# Configure firewall
+sudo ufw allow 80      # Frontend
+sudo ufw allow 8001    # Backend API
+sudo ufw allow 5432    # PostgreSQL
+sudo ufw enable
+
+# Access from other devices
+# Update frontend/.env with your server IP:
+# REACT_APP_API_URL=http://YOUR_SERVER_IP:8001
 ```
 
 #### 🐧 Option 2: Ubuntu Server Deployment
@@ -189,6 +283,113 @@ sudo /opt/sweepingapps/setup-ssl.sh yourdomain.com
 - **API Documentation**: http://localhost:8001/docs
 - **PostgreSQL**: localhost:5432
 - **Redis**: localhost:6379
+
+#### 🔧 Option 3: Manual Linux Setup (Development)
+**For developers who want more control or can't use Docker:**
+
+**Prerequisites:**
+```bash
+# Install dependencies
+sudo apt update
+sudo apt install python3 python3-pip python3-venv nodejs npm postgresql postgresql-contrib
+
+# Verify installations
+python3 --version  # Should be 3.8+
+node --version     # Should be 16+
+npm --version
+```
+
+**Database Setup:**
+```bash
+# Start PostgreSQL
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+
+# Create database and user
+sudo -u postgres psql -c "CREATE DATABASE sweeping_apps;"
+sudo -u postgres psql -c "CREATE USER sweeping_user WITH PASSWORD 'sweeping_password';"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE sweeping_apps TO sweeping_user;"
+```
+
+**Backend Setup:**
+```bash
+# Navigate to backend
+cd backend/
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment
+cat > .env << EOF
+ALLOWED_ORIGINS=*
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=sweeping_apps
+POSTGRES_USER=sweeping_user
+POSTGRES_PASSWORD=sweeping_password
+SECRET_KEY=your-secret-key-$(date +%s)
+EOF
+
+# Start backend (in terminal 1)
+python main.py
+```
+
+**Frontend Setup:**
+```bash
+# Navigate to frontend (in terminal 2)
+cd frontend/
+
+# Install dependencies
+npm install
+
+# Configure environment
+cat > .env << EOF
+REACT_APP_API_URL=http://localhost:8001
+REACT_APP_FRONTEND_URL=http://localhost:3001
+PORT=3001
+HOST=0.0.0.0
+EOF
+
+# Start frontend
+npm start
+```
+
+**Network Access (Optional):**
+```bash
+# Find your server IP
+hostname -I
+
+# Configure firewall
+sudo ufw allow 3001  # Frontend
+sudo ufw allow 8001  # Backend
+sudo ufw enable
+
+# Update frontend .env with server IP for network access:
+# REACT_APP_API_URL=http://YOUR_SERVER_IP:8001
+```
+
+**Quick Start Script:**
+```bash
+# Terminal 1: Backend
+cd backend && source venv/bin/activate && python main.py
+
+# Terminal 2: Frontend
+cd frontend && npm start
+```
+
+**📋 Manual Setup Files:**
+- `LINUX_MANUAL_SETUP.md` - Detailed manual setup guide
+- `backend/requirements.txt` - Python dependencies
+- `frontend/package.json` - Node.js dependencies
+
+**Access Points (Manual Setup):**
+- **Frontend**: http://localhost:3001
+- **Backend API**: http://localhost:8001
+- **PostgreSQL**: localhost:5432
 
 ## ⚡ Performance Optimizations
 
@@ -1666,6 +1867,198 @@ docker-compose ps
 
 # Monitor logs in real-time
 docker-compose logs -f
+```
+
+## 🐧 Linux Docker Troubleshooting
+
+### Linux-Specific Issues
+
+#### 1. Docker Permission Denied
+```bash
+# Add user to docker group
+sudo usermod -aG docker $USER
+
+# Apply group changes (logout/login or use)
+newgrp docker
+
+# Verify
+docker ps
+```
+
+#### 2. Port Already in Use (Linux)
+```bash
+# Find process using port
+sudo lsof -i :80
+sudo lsof -i :8001
+sudo lsof -i :5432
+
+# Kill process
+sudo kill -9 <PID>
+
+# Or change ports in docker-compose.yml
+```
+
+#### 3. Docker Service Not Running
+```bash
+# Check Docker status
+sudo systemctl status docker
+
+# Start Docker
+sudo systemctl start docker
+
+# Enable Docker on boot
+sudo systemctl enable docker
+
+# Restart Docker
+sudo systemctl restart docker
+```
+
+#### 4. Network Access Issues (Linux)
+```bash
+# Find server IP
+ip addr show | grep inet
+hostname -I
+
+# Configure firewall (UFW)
+sudo ufw allow 80
+sudo ufw allow 8001
+sudo ufw allow 5432
+sudo ufw status
+
+# Test connectivity from another device
+curl http://YOUR_SERVER_IP:8001/health
+curl http://YOUR_SERVER_IP:80
+```
+
+#### 5. Database Connection Refused
+```bash
+# Check PostgreSQL container
+docker-compose ps postgres
+
+# View PostgreSQL logs
+docker-compose logs postgres
+
+# Restart PostgreSQL
+docker-compose restart postgres
+
+# Connect to PostgreSQL for testing
+docker exec -it sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps
+```
+
+#### 6. Build Errors on Linux
+```bash
+# Clear Docker cache
+docker system prune -a
+
+# Rebuild without cache
+docker-compose build --no-cache
+
+# Start fresh
+docker-compose down -v
+docker-compose up --build -d
+```
+
+#### 7. Permission Issues with Volumes
+```bash
+# Fix volume permissions
+sudo chown -R $USER:$USER .
+
+# Or for specific directories
+sudo chown -R $USER:$USER ./uploads
+sudo chown -R $USER:$USER ./backend/logs
+```
+
+#### 8. Low Memory/Disk Space
+```bash
+# Check disk space
+df -h
+
+# Remove unused Docker data
+docker system prune -a --volumes
+
+# Check Docker disk usage
+docker system df
+
+# Monitor container resource usage
+docker stats --no-stream
+```
+
+### Linux Performance Tuning
+
+```bash
+# Increase Docker memory limit (if using Docker Desktop on Linux)
+# Edit /etc/docker/daemon.json
+sudo tee /etc/docker/daemon.json << EOF
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  }
+}
+EOF
+
+sudo systemctl restart docker
+```
+
+### Linux-Specific Commands
+
+```bash
+# View all containers
+docker ps -a
+
+# View container logs with timestamps
+docker-compose logs -f --timestamps backend
+
+# Execute command in container
+docker exec -it sweeping-apps-backend bash
+
+# Copy files from container
+docker cp sweeping-apps-backend:/app/logs/app.log ./local-app.log
+
+# Inspect network
+docker network inspect sweeping-apps_default
+
+# Check container IP
+docker inspect sweeping-apps-backend | grep IPAddress
+```
+
+### Firewall Configuration (UFW)
+
+```bash
+# Enable UFW
+sudo ufw enable
+
+# Allow necessary ports
+sudo ufw allow ssh          # SSH access
+sudo ufw allow 80/tcp       # Frontend
+sudo ufw allow 8001/tcp     # Backend API
+sudo ufw allow 5432/tcp     # PostgreSQL
+
+# Check firewall status
+sudo ufw status numbered
+
+# Remove rule if needed
+sudo ufw delete <number>
+
+# Disable firewall (for testing only)
+sudo ufw disable
+```
+
+### SELinux Issues (RHEL/CentOS)
+
+```bash
+# Check SELinux status
+sestatus
+
+# Temporarily disable (for testing)
+sudo setenforce 0
+
+# Permanently disable (edit /etc/selinux/config)
+sudo sed -i 's/SELINUX=enforcing/SELINUX=disabled/' /etc/selinux/config
+
+# Or configure SELinux for Docker
+sudo setsebool -P docker_transition_unconfined 1
 ```
 
 ## Contributing
