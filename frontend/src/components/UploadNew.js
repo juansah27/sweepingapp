@@ -82,6 +82,31 @@ const UploadNew = () => {
   // Marketplace apps status
   const [marketplaceAppsEnabled, setMarketplaceAppsEnabled] = useState(true);
 
+  // Fallback method for copying to clipboard (works without HTTPS)
+  const copyToClipboardFallback = (text, type, columnCount) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        message.success(`Copied ${type} data (${columnCount} columns) to clipboard!`);
+      } else {
+        message.error('Failed to copy data. Please try again.');
+      }
+    } catch (err) {
+      message.error('Copy not supported in this browser');
+    }
+    
+    document.body.removeChild(textArea);
+  };
+
   // Enhanced copy data function with column selection
   const copyAllData = (data, type, columnsToCopy = null) => {
     if (!data || data.length === 0) {
@@ -114,12 +139,17 @@ const UploadNew = () => {
       )
     ].join('\n');
 
-    navigator.clipboard.writeText(csvContent).then(() => {
-      const columnCount = activeColumns.length;
-      message.success(`Copied ${type} data (${columnCount} columns) to clipboard!`);
-    }).catch(() => {
-      message.error('Failed to copy data');
-    });
+    // Try modern clipboard API first, fallback to textarea method
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(csvContent).then(() => {
+        const columnCount = activeColumns.length;
+        message.success(`Copied ${type} data (${columnCount} columns) to clipboard!`);
+      }).catch(() => {
+        copyToClipboardFallback(csvContent, type, activeColumns.length);
+      });
+    } else {
+      copyToClipboardFallback(csvContent, type, activeColumns.length);
+    }
   };
 
   // Copy selected columns only
