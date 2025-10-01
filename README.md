@@ -20,8 +20,19 @@ A modern web application built with FastAPI (backend) and React (frontend) for e
 - **Docker Ready**: Full containerization with PostgreSQL, Redis, and optimized services
 - **Marketplace Apps Integration**: Configurable marketplace apps (currently disabled for Linux compatibility)
 
-## 🔥 Recent Updates
+## 🔥 Recent Updates (Latest)
 
+### Latest Fixes (Current Session)
+- ✅ **Docker Linux Deployment**: Successfully deployed to Ubuntu 24.04 with full Docker setup
+- ✅ **containerd.io Conflict Fix**: Resolved Docker installation conflicts on Ubuntu
+- ✅ **Docker Compose v2 Support**: Updated all commands for docker-compose v2 (space syntax)
+- ✅ **Frontend Health Check Fix**: Removed blocking health check dependency
+- ✅ **Backend Logs Permission Fix**: Fixed permission denied error with Docker volume
+- ✅ **Clipboard Copy Fix**: Added fallback for HTTP access (non-HTTPS environments)
+- ✅ **Database Restore Guide**: Complete PostgreSQL restore instructions
+- ✅ **ContainerConfig Error Fix**: Solution for docker-compose recreation errors
+
+### Previous Updates
 - ✅ **Critical Bug Fixes**: Fixed 6 logic issues in upload process (missing success field, race conditions, memory leaks)
 - ✅ **Linux Docker Support**: Complete Docker setup guide for Linux/Mac with network configuration
 - ✅ **Manual Linux Setup**: Added comprehensive manual setup guide for development
@@ -262,26 +273,30 @@ sudo apt install docker-compose-v2
 - **PostgreSQL**: localhost:5432
 - **Redis**: localhost:6379
 
-**Docker Management Commands:**
+**Docker Management Commands (v2 - with space):**
 ```bash
 # Rebuild specific service
-docker-compose up --build -d backend
+docker compose up --build -d backend
 
 # View service logs
-docker-compose logs -f backend
+docker compose logs -f backend
 
 # Restart service
-docker-compose restart backend
+docker compose restart backend
 
 # Database backup
 docker exec sweeping-apps-postgres pg_dump -U sweeping_user sweeping_apps > backup.sql
 
-# Database restore
-docker exec -i sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps < backup.sql
+# Database restore (stop backend first)
+docker compose stop backend
+docker exec -i sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps < backup/postgres_backup_utf8.sql
+docker compose start backend
 
 # Clean up (removes volumes - WARNING: deletes data)
-docker-compose down -v
+docker compose down -v
 ```
+
+**Note:** For docker-compose v1 users, replace `docker compose` with `docker-compose` (with hyphen).
 
 **Linux-Specific Network Setup:**
 ```bash
@@ -541,23 +556,31 @@ The application runs in a fully containerized environment with the following ser
 - **Network isolation** for security
 - **Environment variables** from `docker.env`
 
-### Management Commands
+### Management Commands (docker-compose v2)
 ```bash
 # Start all services
-docker-compose up --build -d
+docker compose up --build -d
 
 # Stop all services
-docker-compose down
+docker compose down
 
 # View logs
-docker-compose logs -f [service-name]
+docker compose logs -f [service-name]
 
 # Restart specific service
-docker-compose restart [service-name]
+docker compose restart [service-name]
 
 # Remove all containers and volumes
-docker-compose down -v
+docker compose down -v
+
+# Check service status
+docker compose ps
+
+# View resource usage
+docker stats
 ```
+
+**Note:** If using docker-compose v1, replace `docker compose` with `docker-compose`.
 
 #### Option 2: Automated Startup Script
 1. **Development Mode**:
@@ -1913,10 +1936,84 @@ docker inspect sweeping-apps-postgres | grep -A 10 Health
 docker stats
 
 # Check container health
-docker-compose ps
+docker compose ps
 
 # Monitor logs in real-time
-docker-compose logs -f
+docker compose logs -f
+
+# Check specific service logs
+docker compose logs -f backend
+docker compose logs -f frontend
+
+# View last 100 lines
+docker compose logs --tail=100 backend
+```
+
+## 📊 Database Restore Guide
+
+### Restore from Backup File
+
+**Prerequisites:**
+- Backup file: `backup/postgres_backup_utf8.sql`
+- PostgreSQL container running
+
+**Step-by-Step Restore:**
+
+```bash
+# 1. Navigate to project directory
+cd ~/sweepingapp
+
+# 2. Stop backend to disconnect from database
+docker compose stop backend
+
+# 3. Terminate any remaining connections
+docker exec -it sweeping-apps-postgres psql -U sweeping_user -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'sweeping_apps' AND pid <> pg_backend_pid();"
+
+# 4. Drop and recreate database (optional - for clean restore)
+docker exec -it sweeping-apps-postgres psql -U sweeping_user -d postgres -c "DROP DATABASE sweeping_apps;"
+docker exec -it sweeping-apps-postgres psql -U sweeping_user -d postgres -c "CREATE DATABASE sweeping_apps;"
+docker exec -it sweeping-apps-postgres psql -U sweeping_user -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE sweeping_apps TO sweeping_user;"
+
+# 5. Restore from backup
+docker exec -i sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps < backup/postgres_backup_utf8.sql
+
+# 6. Start backend
+docker compose start backend
+
+# 7. Verify data
+docker exec -it sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps -c "SELECT COUNT(*) FROM uploaded_orders;"
+```
+
+**One-Liner Complete Restore:**
+```bash
+cd ~/sweepingapp && \
+docker compose stop backend && \
+sleep 5 && \
+docker exec -it sweeping-apps-postgres psql -U sweeping_user -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'sweeping_apps' AND pid <> pg_backend_pid();" && \
+docker exec -it sweeping-apps-postgres psql -U sweeping_user -d postgres -c "DROP DATABASE sweeping_apps;" && \
+docker exec -it sweeping-apps-postgres psql -U sweeping_user -d postgres -c "CREATE DATABASE sweeping_apps;" && \
+docker exec -it sweeping-apps-postgres psql -U sweeping_user -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE sweeping_apps TO sweeping_user;" && \
+docker exec -i sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps < backup/postgres_backup_utf8.sql && \
+docker compose start backend && \
+sleep 10 && \
+echo "✅ Restore complete!" && \
+docker exec -it sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps -c "SELECT COUNT(*) FROM uploaded_orders;"
+```
+
+**Troubleshooting Database Restore:**
+
+*Error: "database is being accessed by other users"*
+```bash
+# Stop backend first
+docker compose stop backend
+
+# Then retry restore
+```
+
+*Error: "database already exists"*
+```bash
+# Either drop first, or skip to restore step
+docker exec -i sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps < backup/postgres_backup_utf8.sql
 ```
 
 ## 🐧 Linux Docker Troubleshooting
@@ -2031,13 +2128,13 @@ curl http://YOUR_SERVER_IP:80
 #### 5. Database Connection Refused
 ```bash
 # Check PostgreSQL container
-docker-compose ps postgres
+docker compose ps postgres
 
 # View PostgreSQL logs
-docker-compose logs postgres
+docker compose logs postgres
 
 # Restart PostgreSQL
-docker-compose restart postgres
+docker compose restart postgres
 
 # Connect to PostgreSQL for testing
 docker exec -it sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps
@@ -2049,11 +2146,11 @@ docker exec -it sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps
 docker system prune -a
 
 # Rebuild without cache
-docker-compose build --no-cache
+docker compose build --no-cache
 
 # Start fresh
-docker-compose down -v
-docker-compose up --build -d
+docker compose down -v
+docker compose up --build -d
 ```
 
 #### 7. Permission Issues with Volumes
@@ -2081,6 +2178,74 @@ docker system df
 docker stats --no-stream
 ```
 
+#### 9. ContainerConfig KeyError (docker-compose v1)
+**Error:** `KeyError: 'ContainerConfig'` when running `docker-compose up`
+
+**Solution:**
+```bash
+# Stop and remove old container
+docker compose stop frontend
+docker compose rm -f frontend
+
+# Remove old image
+docker rmi sweepingapp_frontend:latest
+
+# Rebuild
+docker compose build --no-cache frontend
+docker compose up -d
+
+# Or restart all services
+docker compose down
+docker compose up --build -d
+```
+
+**Permanent Fix - Upgrade to docker-compose v2:**
+```bash
+# Install docker-compose v2
+sudo apt update
+sudo apt install docker-compose-v2
+
+# Use 'docker compose' (with space) instead of 'docker-compose'
+docker compose up -d
+```
+
+#### 10. Backend Permission Denied: /app/logs/app.log
+**Error:** `PermissionError: [Errno 13] Permission denied: '/app/logs/app.log'`
+
+**Solution:** Already fixed in latest Dockerfile.backend
+```bash
+# Pull latest changes
+git pull origin main
+
+# Rebuild backend
+docker compose build --no-cache backend
+docker compose up -d backend
+
+# Logs are now stored in Docker volume (no permission issues)
+```
+
+#### 11. Clipboard Copy Not Working (HTTP)
+**Error:** `Cannot read properties of undefined (reading 'writeText')`
+
+**Cause:** Clipboard API only works on HTTPS or localhost
+
+**Solution:** Already fixed in latest frontend code
+```bash
+# Pull latest changes
+git pull origin main
+
+# Rebuild frontend
+docker compose build --no-cache frontend
+docker compose up -d frontend
+
+# Fallback method now works on HTTP connections
+```
+
+**Test:**
+- Access via IP address (HTTP)
+- Click "Copy Data" button
+- Should work with fallback method
+
 ### Linux Performance Tuning
 
 ```bash
@@ -2106,7 +2271,7 @@ sudo systemctl restart docker
 docker ps -a
 
 # View container logs with timestamps
-docker-compose logs -f --timestamps backend
+docker compose logs -f --timestamps backend
 
 # Execute command in container
 docker exec -it sweeping-apps-backend bash
@@ -2115,10 +2280,13 @@ docker exec -it sweeping-apps-backend bash
 docker cp sweeping-apps-backend:/app/logs/app.log ./local-app.log
 
 # Inspect network
-docker network inspect sweeping-apps_default
+docker network inspect sweepingapp_sweeping-apps-network
 
 # Check container IP
 docker inspect sweeping-apps-backend | grep IPAddress
+
+# View logs from Docker volume
+docker exec -it sweeping-apps-backend cat /app/logs/app.log
 ```
 
 ### Firewall Configuration (UFW)
