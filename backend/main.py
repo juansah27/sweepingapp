@@ -871,6 +871,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 def process_upload_background(task_id: str, file_content: bytes, filename: str, current_user: str):
     """Background function to process upload with user-specific workspace"""
     total_start_time = datetime.now()
+    db = None  # Initialize to None to prevent UnboundLocalError in finally block
     
     try:
         # Add initial log
@@ -917,12 +918,8 @@ def process_upload_background(task_id: str, file_content: bytes, filename: str, 
         
         brand_name = filename_info['brand']
         
-        # Validate shop_id
-        shop_id = get_shop_id_from_brand_shops(brand_name, sales_channel, db)
-        if not shop_id:
-            error_message = f"No shop_id found for {brand_name} in {sales_channel}. Please add shop_id configuration before uploading."
-            add_upload_log(task_id, "error", f"❌ {error_message}")
-            raise Exception(error_message)
+        # Note: shop_id is already validated in validate_upload_request() before background task starts
+        # No need to re-validate here, which improves performance
         
         # Data preparation
         current_time = get_wib_now().replace(tzinfo=None)
@@ -1177,8 +1174,8 @@ def process_upload_background(task_id: str, file_content: bytes, filename: str, 
                         timer = threading.Timer(30.0, timeout_handler)
                         timer.start()
                         
-                        # Start interface check in thread
-                        check_thread = threading.Thread(target=check_with_timeout)
+                        # Start interface check in thread (daemon=True to prevent memory leak)
+                        check_thread = threading.Thread(target=check_with_timeout, daemon=True)
                         check_thread.start()
                         
                         # Wait for completion or timeout
@@ -1188,6 +1185,10 @@ def process_upload_background(task_id: str, file_content: bytes, filename: str, 
                         if timeout_occurred.is_set():
                             add_upload_log(task_id, "warning", f"⚠️ Interface check timeout for chunk after 30 seconds")
                             chunk_interface_results = {}
+                        
+                        # Ensure thread cleanup
+                        if check_thread.is_alive():
+                            add_upload_log(task_id, "warning", f"⚠️ Check thread still running after timeout, will be cleaned up automatically")
                         
                     except Exception as e:
                         add_upload_log(task_id, "warning", f"⚠️ Interface check failed for chunk: {str(e)}")
@@ -1210,11 +1211,11 @@ def process_upload_background(task_id: str, file_content: bytes, filename: str, 
         
         # OPTIMIZED: Bulk query existing orders with improved filtering
         existing_orders_dict = {}
-        if len(all_order_numbers) > 10:  # Skip duplicate check for very small datasets
-            existing_orders = db.query(UploadedOrder).filter(
-                UploadedOrder.OrderNumber.in_(all_order_numbers)
-            ).all()
-            existing_orders_dict = {order.OrderNumber: order for order in existing_orders}
+        # Always check for duplicates to prevent race conditions and data integrity issues
+        existing_orders = db.query(UploadedOrder).filter(
+            UploadedOrder.OrderNumber.in_(all_order_numbers)
+        ).all()
+        existing_orders_dict = {order.OrderNumber: order for order in existing_orders}
         
         # OPTIMIZED: Vectorized interface status processing
         orders_to_insert = []
@@ -1261,17 +1262,28 @@ def process_upload_background(task_id: str, file_content: bytes, filename: str, 
             try:
                 db.bulk_insert_mappings(UploadedOrder, orders_to_insert)
                 db.commit()  # Single commit for all inserts
-            except Exception:
+            except Exception as bulk_error:
                 # Fallback to individual inserts for unique constraint violations
+                add_upload_log(task_id, "warning", f"⚠️ Bulk insert failed, falling back to individual inserts: {str(bulk_error)}")
                 db.rollback()
+                failed_orders = []
+                success_count = 0
                 for order_data in orders_to_insert:
                     try:
                         new_order = UploadedOrder(**order_data)
                         db.add(new_order)
                         db.commit()
-                    except Exception:
+                        success_count += 1
+                    except Exception as e:
                         db.rollback()
+                        failed_orders.append(order_data['OrderNumber'])
                         continue
+                
+                # Log summary of fallback results
+                if failed_orders:
+                    add_upload_log(task_id, "warning", f"⚠️ {len(failed_orders)} orders failed to insert (likely duplicates): {', '.join(failed_orders[:5])}{'...' if len(failed_orders) > 5 else ''}")
+                if success_count > 0:
+                    add_upload_log(task_id, "info", f"✅ Successfully inserted {success_count} orders via fallback method")
         
         # Bulk update existing orders
         if orders_to_update:
@@ -1370,7 +1382,7 @@ def process_upload_background(task_id: str, file_content: bytes, filename: str, 
             db.commit()
         
     finally:
-        if 'db' in locals():
+        if db is not None:
             try:
                 db.close()
                 add_upload_log(task_id, "info", "🔒 Database connection closed properly")
@@ -3733,6 +3745,7 @@ def upload_file_background(
         )
         
         return {
+            "success": True,
             "message": "Upload started in background",
             "task_id": task_id,
             "status": "pending",
