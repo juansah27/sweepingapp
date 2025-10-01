@@ -1,0 +1,268 @@
+/* MarketplaceInfo Component Styles */
+
+.marketplace-info-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Table Styles */
+.marketplace-table {
+  margin-top: 16px;
+}
+
+.marketplace-table .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 600;
+  color: #262626;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.marketplace-table .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 12px 16px;
+}
+
+/* Row Styles */
+.light-row-even {
+  background-color: #ffffff;
+}
+
+.light-row-odd {
+  background-color: #fafafa;
+}
+
+.dark-row-even {
+  background-color: #1f1f1f;
+}
+
+.dark-row-odd {
+  background-color: #262626;
+}
+
+/* Card Styles */
+.ant-card.dark {
+  border-color: #434343;
+}
+
+.ant-card.light {
+  border-color: #f0f0f0;
+}
+
+/* Statistic Description */
+.stat-description {
+  font-size: 12px;
+  color: #8c8c8c;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Tag Styles */
+.ant-tag {
+  border-radius: 4px;
+  font-weight: 500;
+  padding: 2px 8px;
+  height: auto;
+  line-height: 1.4;
+}
+
+/* Button Styles */
+.ant-btn-primary {
+  border-radius: 6px;
+  height: 36px;
+  font-weight: 500;
+}
+
+.ant-btn-text {
+  border-radius: 4px;
+  height: 32px;
+}
+
+/* Modal Styles */
+.ant-modal-header {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 20px 24px;
+}
+
+.ant-modal-body {
+  padding: 24px;
+}
+
+.ant-modal-footer {
+  border-top: 1px solid #f0f0f0;
+  padding: 16px 24px;
+}
+
+/* Form Styles */
+.ant-form-item-label > label {
+  font-weight: 500;
+  color: #262626;
+}
+
+/* Search and Filter Controls */
+.search-filter-container {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #f0f0f0;
+}
+
+.search-filter-container.dark {
+  background: #1f1f1f;
+  border-color: #434343;
+}
+
+.search-input {
+  border-radius: 6px;
+}
+
+.filter-select {
+  border-radius: 6px;
+}
+
+.clear-filters-btn {
+  border-radius: 6px;
+  height: 32px;
+}
+
+.record-counter {
+  font-size: 12px;
+  color: #8c8c8c;
+  text-align: right;
+  padding: 8px 0;
+}
+
+/* Batch Tag Styles */
+.batch-tag {
+  min-width: 40px;
+  text-align: center;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+.batch-tag.batch-1 {
+  background: #e6f7ff;
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.batch-tag.batch-2 {
+  background: #f6ffed;
+  border-color: #52c41a;
+  color: #52c41a;
+}
+
+.batch-tag.batch-3 {
+  background: #fff7e6;
+  border-color: #fa8c16;
+  color: #fa8c16;
+}
+
+.batch-tag.batch-4 {
+  background: #f9f0ff;
+  border-color: #722ed1;
+  color: #722ed1;
+}
+
+.ant-input {
+  border-radius: 6px;
+  height: 40px;
+}
+
+.ant-select-selector {
+  border-radius: 6px;
+  height: 40px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .marketplace-info-container {
+    padding: 16px;
+  }
+  
+  .ant-table {
+    font-size: 12px;
+  }
+  
+  .ant-table-thead > tr > th,
+  .ant-table-tbody > tr > td {
+    padding: 8px 12px;
+  }
+}
+
+/* Dark Theme Adjustments */
+[data-theme="dark"] .marketplace-info-container {
+  background-color: #141414;
+}
+
+[data-theme="dark"] .ant-card.dark {
+  background-color: #262626;
+  border-color: #434343;
+}
+
+[data-theme="dark"] .ant-table {
+  background-color: #1f1f1f;
+}
+
+[data-theme="dark"] .ant-table-thead > tr > th {
+  background-color: #262626;
+  color: #d9d9d9;
+  border-bottom-color: #434343;
+}
+
+[data-theme="dark"] .ant-table-tbody > tr > td {
+  border-bottom-color: #434343;
+}
+
+[data-theme="dark"] .ant-table-tbody > tr:hover > td {
+  background-color: #303030;
+}
+
+/* Hover Effects */
+.marketplace-table .ant-table-tbody > tr:hover > td {
+  background-color: #f5f5f5;
+}
+
+[data-theme="dark"] .marketplace-table .ant-table-tbody > tr:hover > td {
+  background-color: #303030;
+}
+
+/* Loading States */
+.ant-spin-nested-loading {
+  position: relative;
+}
+
+.ant-spin-container {
+  position: relative;
+  transition: opacity 0.3s;
+}
+
+/* Pagination Styles */
+.ant-pagination {
+  margin-top: 16px;
+  text-align: right;
+}
+
+.ant-pagination-item {
+  border-radius: 4px;
+}
+
+.ant-pagination-item-active {
+  border-color: #1890ff;
+}
+
+/* Filter Styles */
+.ant-table-filter-dropdown {
+  border-radius: 6px;
+  box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Action Button Hover */
+.ant-btn-text:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .ant-btn-text:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}

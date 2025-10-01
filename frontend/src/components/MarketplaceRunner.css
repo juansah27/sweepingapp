@@ -1,0 +1,220 @@
+.marketplace-runner {
+  padding: 24px;
+}
+
+.marketplace-runner.dark {
+  background-color: #141414;
+  color: #ffffff;
+}
+
+.marketplace-runner.light {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.marketplace-card {
+  height: 100%;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+}
+
+.marketplace-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.marketplace-card.dark {
+  background-color: #1f1f1f;
+  border-color: #303030;
+}
+
+.marketplace-card.light {
+  background-color: #ffffff;
+  border-color: #d9d9d9;
+}
+
+.marketplace-info {
+  padding: 8px 0;
+}
+
+.marketplace-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.marketplace-icon {
+  font-size: 24px;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  color: white;
+}
+
+.marketplace-details {
+  flex: 1;
+}
+
+.marketplace-status {
+  margin-top: 12px;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.status-row:last-child {
+  margin-bottom: 0;
+}
+
+.format-info {
+  padding: 16px;
+  border-radius: 6px;
+  background-color: #fafafa;
+  border: 1px solid #e8e8e8;
+}
+
+.marketplace-runner.dark .format-info {
+  background-color: #1f1f1f;
+  border-color: #303030;
+}
+
+.orderlist-content {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.orderlist-content pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .marketplace-runner {
+    padding: 16px;
+  }
+  
+  .marketplace-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .marketplace-icon {
+    margin-bottom: 8px;
+    margin-right: 0;
+  }
+  
+  .status-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+/* Animation for status changes */
+.marketplace-card .ant-badge {
+  transition: all 0.3s ease;
+}
+
+.marketplace-card:hover .ant-badge {
+  transform: scale(1.05);
+}
+
+/* Custom button styles */
+.marketplace-card .ant-btn {
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.marketplace-card .ant-btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Loading state */
+.marketplace-runner .ant-spin-container {
+  min-height: 200px;
+}
+
+/* Card actions styling */
+.marketplace-card .ant-card-actions {
+  background-color: #fafafa;
+  border-top: 1px solid #e8e8e8;
+}
+
+.marketplace-runner.dark .marketplace-card .ant-card-actions {
+  background-color: #1f1f1f;
+  border-top-color: #303030;
+}
+
+.marketplace-card .ant-card-actions > li {
+  margin: 8px 0;
+}
+
+.marketplace-card .ant-card-actions .ant-btn {
+  width: 100%;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Status badge custom colors */
+.ant-badge-status-success {
+  color: #52c41a;
+}
+
+.ant-badge-status-processing {
+  color: #1890ff;
+}
+
+.ant-badge-status-error {
+  color: #ff4d4f;
+}
+
+.ant-badge-status-default {
+  color: #8c8c8c;
+}
+
+/* Typography adjustments */
+.marketplace-runner .ant-typography {
+  color: inherit;
+}
+
+.marketplace-runner.dark .ant-typography {
+  color: #ffffff;
+}
+
+.marketplace-runner.light .ant-typography {
+  color: #000000;
+}
+
+/* Modal customizations */
+.marketplace-runner .ant-modal-header {
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.marketplace-runner.dark .ant-modal-header {
+  border-bottom-color: #303030;
+}
+
+.marketplace-runner .ant-modal-body {
+  padding: 24px;
+}
+
+.marketplace-runner .ant-modal-footer {
+  border-top: 1px solid #e8e8e8;
+}
+
+.marketplace-runner.dark .ant-modal-footer {
+  border-top-color: #303030;
+}

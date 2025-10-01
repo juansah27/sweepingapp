@@ -1,0 +1,62 @@
+/* GetOrder component styles */
+.ant-table-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Custom styles for long text columns */
+.status-column .ant-tag {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.status-column .ant-tag span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.order-number-column a {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.brand-column .ant-tag {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.brand-column .ant-tag span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+/* Ensure table doesn't break layout */
+.ant-table {
+  overflow-x: auto;
+}
+
+/* Custom scrollbar for table */
+.ant-table-body::-webkit-scrollbar {
+  height: 8px;
+}
+
+.ant-table-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.ant-table-body::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.ant-table-body::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

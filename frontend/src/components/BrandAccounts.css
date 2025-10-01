@@ -1,0 +1,381 @@
+/* Brand Accounts Component Styles */
+
+.brand-accounts-container {
+  padding: 16px;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* Compact table styling */
+.brand-accounts-container .ant-table {
+  font-size: 12px;
+}
+
+.brand-accounts-container .ant-table-thead > tr > th {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #fafafa;
+}
+
+.brand-accounts-container .ant-table-tbody > tr > td {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.brand-accounts-container .ant-table-tbody > tr:hover > td {
+  background: #f0f0f0;
+}
+
+/* Compact pagination */
+.brand-accounts-container .ant-pagination {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.brand-accounts-container .ant-pagination .ant-pagination-item {
+  min-width: 28px;
+  height: 28px;
+  line-height: 26px;
+}
+
+.brand-accounts-container .ant-pagination .ant-pagination-prev,
+.brand-accounts-container .ant-pagination .ant-pagination-next {
+  min-width: 28px;
+  height: 28px;
+  line-height: 26px;
+}
+
+/* Action buttons styling */
+.brand-accounts-container .ant-btn-icon-only {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.brand-accounts-container .ant-btn .anticon {
+  font-size: 14px;
+}
+
+.brand-accounts-container .ant-btn-text {
+  border: none;
+  background: transparent;
+}
+
+.brand-accounts-container .ant-btn-text:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Global search filter styling */
+.brand-accounts-container .ant-input-affix-wrapper {
+  border-radius: 8px;
+  height: 40px;
+  font-size: 16px;
+}
+
+.brand-accounts-container .ant-input-affix-wrapper:hover {
+  border-color: #40a9ff;
+}
+
+.brand-accounts-container .ant-input-affix-wrapper-focused {
+  border-color: #40a9ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.brand-accounts-container .ant-input-affix-wrapper .ant-input {
+  font-size: 16px;
+  height: 38px;
+}
+
+/* Search container styling */
+.brand-accounts-container .search-container {
+  background: #fafafa;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+}
+
+.brand-accounts-container .search-container:hover {
+  border-color: #d9d9d9;
+}
+
+.brand-accounts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.brand-accounts-title {
+  margin: 0;
+  color: #1890ff;
+}
+
+.brand-accounts-subtitle {
+  color: #666;
+  margin-top: 4px;
+}
+
+.stats-card {
+  text-align: center;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.stats-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.filters-card {
+  margin-bottom: 16px;
+  border-radius: 8px;
+}
+
+.brand-accounts-table {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.brand-tag {
+  font-weight: 500;
+}
+
+.platform-tag {
+  font-weight: 500;
+}
+
+.status-tag {
+  font-weight: 500;
+}
+
+.uid-text {
+  font-family: 'Courier New', monospace;
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.password-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.password-text {
+  font-family: 'Courier New', monospace;
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.password-toggle-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #666;
+  transition: color 0.3s ease;
+}
+
+.password-toggle-btn:hover {
+  color: #1890ff;
+}
+
+.pic-otp-text {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.created-date {
+  font-size: 12px;
+  color: #666;
+}
+
+.created-time {
+  font-size: 11px;
+  color: #999;
+}
+
+.actions-container {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+  background: #f0f0f0;
+}
+
+.action-btn.edit:hover {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.action-btn.delete:hover {
+  background: #fff2f0;
+  color: #ff4d4f;
+}
+
+.modal-form {
+  padding: 0;
+}
+
+.form-row {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.form-input {
+  border-radius: 6px;
+}
+
+.form-select {
+  border-radius: 6px;
+}
+
+.modal-footer {
+  text-align: right;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+/* Dark mode styles */
+.dark-mode .brand-accounts-container {
+  background: #141414;
+}
+
+.dark-mode .brand-accounts-container .ant-table-thead > tr > th {
+  background: #1f1f1f;
+  color: #fff;
+}
+
+.dark-mode .brand-accounts-container .ant-table-tbody > tr:hover > td {
+  background: #262626;
+}
+
+.dark-mode .brand-accounts-title {
+  color: #177ddc;
+}
+
+.dark-mode .brand-accounts-subtitle {
+  color: #999;
+}
+
+.dark-mode .stats-card {
+  background: #1f1f1f;
+  border: 1px solid #303030;
+}
+
+.dark-mode .filters-card {
+  background: #1f1f1f;
+  border: 1px solid #303030;
+}
+
+.dark-mode .brand-accounts-table {
+  background: #1f1f1f;
+  border: 1px solid #303030;
+}
+
+.dark-mode .uid-text {
+  background: #262626;
+  color: #fff;
+}
+
+.dark-mode .password-text {
+  background: #262626;
+  color: #fff;
+}
+
+.dark-mode .created-date {
+  color: #999;
+}
+
+.dark-mode .created-time {
+  color: #666;
+}
+
+.dark-mode .action-btn:hover {
+  background: #262626;
+}
+
+.dark-mode .action-btn.edit:hover {
+  background: #111b26;
+  color: #177ddc;
+}
+
+.dark-mode .action-btn.delete:hover {
+  background: #2a1215;
+  color: #ff7875;
+}
+
+.dark-mode .modal-footer {
+  border-top: 1px solid #303030;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .brand-accounts-container {
+    padding: 16px;
+  }
+  
+  .brand-accounts-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .stats-card {
+    margin-bottom: 16px;
+  }
+  
+  .filters-card .ant-row {
+    flex-direction: column;
+  }
+  
+  .filters-card .ant-col {
+    margin-bottom: 12px;
+  }
+}
+
+@media (max-width: 576px) {
+  .brand-accounts-container {
+    padding: 12px;
+  }
+  
+  .brand-accounts-title {
+    font-size: 20px;
+  }
+  
+  .stats-card {
+    padding: 16px;
+  }
+  
+  .filters-card {
+    padding: 16px;
+  }
+}

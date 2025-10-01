@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+venvs/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Database
+*.db
+*.sqlite
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+env.bak
+
+# Backup files
+*.bak
+*.backup
+*.zip
+*.tar.gz
+
+# Uploads
+uploads/
+temp/
+
+# Virtual environments
+*/venv/
+*/env/
+*/site-packages/

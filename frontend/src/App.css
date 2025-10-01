@@ -1,0 +1,240 @@
+.App {
+  text-align: left;
+}
+
+.ant-layout-header {
+  padding: 0 24px;
+}
+
+.ant-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.ant-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.ant-table-thead > tr > th {
+  background-color: #fafafa;
+  font-weight: 600;
+}
+
+.ant-statistic-title {
+  font-size: 14px;
+  color: #666;
+}
+
+.ant-tag {
+  border-radius: 4px;
+}
+
+.ant-btn {
+  border-radius: 6px;
+}
+
+.ant-input, .ant-select-selector {
+  border-radius: 6px;
+}
+
+.ant-upload-drag {
+  border-radius: 8px;
+}
+
+.ant-upload-drag:hover {
+  border-color: #1890ff;
+}
+
+.ant-tabs-tab {
+  font-weight: 500;
+}
+
+.ant-alert {
+  border-radius: 6px;
+}
+
+.ant-progress-bg {
+  border-radius: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .ant-layout-header {
+    padding: 0 16px;
+  }
+  
+  .ant-card {
+    margin-bottom: 16px;
+  }
+  
+  .ant-table {
+    font-size: 12px;
+  }
+}
+
+/* Responsive adjustments for sidebar */
+@media (max-width: 768px) {
+  .ant-layout-sider {
+    position: fixed !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+  }
+  
+  .ant-layout-content {
+    margin-left: 0 !important;
+    padding: 16px !important;
+  }
+}
+
+/* Dark mode overrides */
+[data-theme='dark'] .ant-card {
+  background: #1f1f1f;
+  border-color: #303030;
+}
+
+[data-theme='dark'] .ant-card-hoverable:hover {
+  border-color: #177ddc;
+}
+
+[data-theme='dark'] .ant-typography {
+  color: #d9d9d9;
+}
+
+[data-theme='dark'] .ant-typography h1,
+[data-theme='dark'] .ant-typography h2,
+[data-theme='dark'] .ant-typography h3,
+[data-theme='dark'] .ant-typography h4,
+[data-theme='dark'] .ant-typography h5 {
+  color: white;
+}
+
+/* Smooth transitions */
+.ant-layout-sider,
+.ant-layout-content {
+  transition: all 0.2s ease;
+}
+
+/* Mobile menu button styles */
+.mobile-menu-button {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 1000;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Ensure content doesn't overlap with fixed sidebar */
+.ant-layout {
+  min-height: 100vh;
+}
+
+/* Custom scrollbar for sidebar */
+.ant-layout-sider::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ant-layout-sider::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ant-layout-sider::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.ant-layout-sider::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Animation for loading states */
+.ant-spin-dot {
+  animation: antSpinMove 1.2s infinite linear;
+}
+
+@keyframes antSpinMove {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Hover effects for interactive elements */
+.ant-card-hoverable:hover {
+  transform: translateY(-2px);
+  transition: transform 0.2s ease;
+}
+
+.ant-btn:hover {
+  transform: translateY(-1px);
+  transition: transform 0.2s ease;
+}
+
+/* Custom focus styles */
+.ant-input:focus,
+.ant-select-focused .ant-select-selector {
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+/* Status tag colors */
+.ant-tag-success {
+  background-color: #f6ffed;
+  border-color: #b7eb8f;
+  color: #52c41a;
+}
+
+.ant-tag-processing {
+  background-color: #e6f7ff;
+  border-color: #91d5ff;
+  color: #1890ff;
+}
+
+.ant-tag-error {
+  background-color: #fff2f0;
+  border-color: #ffccc7;
+  color: #ff4d4f;
+}
+
+/* Table row hover effect */
+.ant-table-tbody > tr:hover > td {
+  background-color: #f5f5f5;
+}
+
+/* Form layout improvements */
+.ant-form-item-label > label {
+  font-weight: 500;
+  color: #262626;
+}
+
+/* Upload area styling */
+.ant-upload-drag-icon {
+  color: #1890ff;
+}
+
+.ant-upload-text {
+  color: #262626;
+  font-weight: 500;
+}
+
+.ant-upload-hint {
+  color: #8c8c8c;
+}
