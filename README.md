@@ -1524,9 +1524,59 @@ docker compose logs -f backend
 ```bash
 # Optimized logs
 docker compose logs -f backend
-# Shows: INFO, WARNING, ERROR only
+# Shows: WARNING, ERROR only (optimized)
 # Generic error messages
 # Performance metrics logged
+# Console output minimized
+```
+
+### **Console Output Optimization:**
+
+#### **Backend Optimization (Python):**
+```python
+# backend/main.py - Automatic based on ENVIRONMENT
+if ENVIRONMENT == "production":
+    # Production logging - only WARNING and ERROR
+    logging.basicConfig(level=logging.WARNING)
+    # Disable verbose logging
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+else:
+    # Development logging - INFO and above
+    logging.basicConfig(level=logging.INFO)
+```
+
+#### **Frontend Optimization (React):**
+```javascript
+// frontend/src/App.js - Automatic based on NODE_ENV
+if (process.env.NODE_ENV === 'production') {
+  // Disable verbose console logs in production
+  console.log = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+  console.trace = () => {};
+  // Keep warnings and errors for debugging
+}
+```
+
+#### **Console Output Comparison:**
+
+| **Mode** | **Backend Logs** | **Frontend Console** | **Total Messages** |
+|----------|------------------|---------------------|-------------------|
+| **Development** | DEBUG, INFO, WARNING, ERROR | All console methods | 200-300+ |
+| **Production** | WARNING, ERROR only | WARN, ERROR only | 10-50 |
+| **Optimized** | WARNING, ERROR only | WARN, ERROR only | 5-20 |
+
+#### **Verify Console Optimization:**
+```bash
+# Check backend logs (should be minimal in production)
+docker compose logs backend | grep -E "(INFO|DEBUG)" | wc -l
+# Expected: 0 in production mode
+
+# Check frontend console in browser:
+# 1. Open Developer Tools > Console
+# 2. Should see minimal messages
+# 3. Only warnings/errors visible
 ```
 
 ### **Rekomendasi:**
