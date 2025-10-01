@@ -65,6 +65,10 @@ WORKDIR /app
 # Copy application code
 COPY backend/ /app/
 
+# Create logs directory with proper permissions
+RUN mkdir -p /app/logs && \
+    chmod 777 /app/logs
+
 # Change ownership to non-root user
 RUN chown -R appuser:appuser /app
 

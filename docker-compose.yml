@@ -44,7 +44,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-sweeping_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-sweeping_password}
     volumes:
-      - ./backend/logs:/app/logs
+      - backend_logs:/app/logs
       - ./JobGetOrder:/app/JobGetOrder
     ports:
       - "0.0.0.0:8001:8001"
@@ -122,6 +122,8 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  backend_logs:
     driver: local
 
 networks:
