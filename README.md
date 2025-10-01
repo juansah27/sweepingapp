@@ -1354,6 +1354,196 @@ python main.py
 # Already handled in main.py
 ```
 
+## 🔄 Development vs Production Mode
+
+### **Development Mode** (Default)
+```bash
+# docker.env (Development)
+ENVIRONMENT=development
+DEBUG=true
+WORKERS=1
+SECRET_KEY=dev-secret-key
+ALLOWED_ORIGINS=http://localhost,http://127.0.0.1
+```
+
+### **Production Mode** (Optimized)
+```bash
+# docker.env (Production)
+ENVIRONMENT=production
+DEBUG=false
+WORKERS=4
+SECRET_KEY=KlwxCZ0vQ6jILBlHQLN7HeqDfY85uIvRvUMEcyHfZHc
+ALLOWED_ORIGINS=http://10.6.0.185,http://yourdomain.com
+```
+
+### **Key Differences:**
+
+| **Aspect** | **Development** | **Production** |
+|------------|----------------|----------------|
+| **Debug Mode** | ✅ `DEBUG=true` | ❌ `DEBUG=false` |
+| **Workers** | 1 worker | 4 workers |
+| **Logging** | Verbose, detailed | Optimized, minimal |
+| **Error Handling** | Stack traces shown | Generic error messages |
+| **Performance** | Slower, debug overhead | Faster, optimized |
+| **Security** | Relaxed CORS | Strict CORS |
+| **Resource Usage** | Lower CPU/RAM | Higher CPU/RAM |
+| **Hot Reload** | ✅ Auto-reload on changes | ❌ Static build |
+| **API Docs** | Full Swagger UI | Limited/disabled |
+
+### **Performance Impact:**
+
+**Development:**
+- **Response Time:** ~200-500ms
+- **Memory Usage:** ~200MB
+- **CPU Usage:** ~10-20%
+- **Concurrent Users:** 1-5
+
+**Production:**
+- **Response Time:** ~50-100ms
+- **Memory Usage:** ~500MB-1GB
+- **CPU Usage:** ~30-50%
+- **Concurrent Users:** 50-100+
+
+### **Quick Switch Commands:**
+
+#### **Switch to Production Mode:**
+```bash
+cd ~/sweepingapp && \
+cp docker.env docker.env.backup.$(date +%Y%m%d_%H%M%S) && \
+sed -i 's/ENVIRONMENT=development/ENVIRONMENT=production/' docker.env && \
+sed -i 's/DEBUG=true/DEBUG=false/' docker.env && \
+sed -i 's/WORKERS=1/WORKERS=4/' docker.env && \
+echo "✅ Switched to PRODUCTION mode" && \
+docker compose down && docker compose up -d
+```
+
+#### **Switch to Development Mode:**
+```bash
+cd ~/sweepingapp && \
+cp docker.env docker.env.backup.$(date +%Y%m%d_%H%M%S) && \
+sed -i 's/ENVIRONMENT=production/ENVIRONMENT=development/' docker.env && \
+sed -i 's/DEBUG=false/DEBUG=true/' docker.env && \
+sed -i 's/WORKERS=4/WORKERS=1/' docker.env && \
+echo "✅ Switched to DEVELOPMENT mode" && \
+docker compose down && docker compose up -d
+```
+
+#### **Full Production Deployment with Custom Config:**
+```bash
+cd ~/sweepingapp && \
+cp docker.env docker.env.backup.$(date +%Y%m%d_%H%M%S) && \
+cat > docker.env << 'EOF'
+# Database Configuration
+POSTGRES_DB=sweeping_apps
+POSTGRES_USER=sweeping_user
+POSTGRES_PASSWORD=SophieHappy33
+
+# Backend Configuration - PRODUCTION
+SECRET_KEY=KlwxCZ0vQ6jILBlHQLN7HeqDfY85uIvRvUMEcyHfZHc
+ENVIRONMENT=production
+DEBUG=false
+WORKERS=4
+
+# External Database (if using)
+DB_SERVER=10.6.13.33\newjda
+DB_NAME=Flexo_db
+DB_USERNAME=fservice
+DB_PASSWORD=SophieHappy33
+DB_TRUSTED_CONNECTION=no
+
+# Security
+ALLOWED_ORIGINS=http://10.6.0.185,http://yourdomain.com
+
+# Features
+AUTO_RUN_MARKETPLACE_APPS=false
+MARKETPLACE_APPS_ENABLED=false
+EOF
+echo "✅ Production config updated!" && \
+echo "📦 Stopping services..." && \
+docker compose down && \
+echo "🔨 Rebuilding with production settings..." && \
+docker compose build --no-cache && \
+echo "🚀 Starting production services..." && \
+docker compose up -d && \
+sleep 15 && \
+echo "" && \
+echo "✅ Production deployment complete!" && \
+echo "" && \
+echo "📊 Container Status:" && \
+docker compose ps && \
+echo "" && \
+echo "🌐 Access Points:" && \
+echo "  Frontend: http://10.6.0.185" && \
+echo "  Backend:  http://10.6.0.185:8001" && \
+echo "  API Docs: http://10.6.0.185:8001/docs" && \
+echo "" && \
+echo "📝 Logs: docker compose logs -f"
+```
+
+#### **Verify Mode Switch:**
+```bash
+# Check current mode
+echo "🔍 Current Configuration:"
+echo "Environment: $(grep ENVIRONMENT docker.env)"
+echo "Debug: $(grep DEBUG docker.env)"
+echo "Workers: $(grep WORKERS docker.env)"
+echo ""
+echo "📊 Container Status:"
+docker compose ps
+echo ""
+echo "🔍 Backend Logs (check for mode):"
+docker compose logs backend | grep -i "environment\|debug\|worker" | tail -5
+```
+
+### **Security Differences:**
+
+**Development:**
+- ✅ CORS allows localhost
+- ✅ Debug endpoints enabled
+- ✅ Detailed error messages
+- ✅ API docs accessible
+
+**Production:**
+- ❌ CORS restricted to specific domains
+- ❌ Debug endpoints disabled
+- ❌ Generic error messages
+- ❌ API docs limited/disabled
+
+### **Monitoring & Logs:**
+
+**Development:**
+```bash
+# Verbose logs
+docker compose logs -f backend
+# Shows: DEBUG, INFO, WARNING, ERROR
+# Stack traces visible
+# Database queries logged
+```
+
+**Production:**
+```bash
+# Optimized logs
+docker compose logs -f backend
+# Shows: INFO, WARNING, ERROR only
+# Generic error messages
+# Performance metrics logged
+```
+
+### **Rekomendasi:**
+
+**Untuk Production:**
+- ✅ Use production mode untuk performa optimal
+- ✅ Monitor resource usage
+- ✅ Setup proper logging
+- ✅ Configure backup strategy
+- ✅ Setup SSL/HTTPS
+
+**Untuk Development:**
+- ✅ Use development mode untuk debugging
+- ✅ Enable verbose logging
+- ✅ Use single worker untuk simplicity
+- ✅ Allow localhost access
+
 **🚫 Problem: Production frontend build fails**
 ```bash
 # Check dependencies:
