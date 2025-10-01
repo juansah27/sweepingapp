@@ -65,11 +65,27 @@ def get_project_root():
 AUTO_RUN_MARKETPLACE_APPS = os.getenv("AUTO_RUN_MARKETPLACE_APPS", "false").lower() == "true"
 MARKETPLACE_APPS_ENABLED = os.getenv("MARKETPLACE_APPS_ENABLED", "false").lower() == "true"
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# Configure logging based on environment
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
+
+if ENVIRONMENT == "production":
+    # Production logging - only WARNING and ERROR
+    logging.basicConfig(
+        level=logging.WARNING,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+    # Disable verbose logging for production
+    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    logging.getLogger("uvicorn.error").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.pool").setLevel(logging.WARNING)
+else:
+    # Development logging - INFO and above
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager

@@ -9,6 +9,17 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import './App.css';
 
+// Optimize console output for production
+if (process.env.NODE_ENV === 'production') {
+  // Disable verbose console logs in production
+  console.log = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+  console.trace = () => {};
+  // Keep warnings and errors for debugging
+  // console.warn and console.error remain active
+}
+
 // Lazy load components for better performance
 const Home = lazy(() => import('./components/Home'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
