@@ -1202,7 +1202,7 @@ def process_upload_background(task_id: str, file_content: bytes, filename: str, 
                         def check_with_timeout():
                             nonlocal chunk_interface_results
                             try:
-                                chunk_interface_results = check_interface_status(chunk_order_numbers, marketplace)
+                                chunk_interface_results = check_interface_status(chunk_order_numbers, marketplace, EXTERNAL_CHUNK_SIZE)
                             except Exception as e:
                                 add_upload_log(task_id, "warning", f"⚠️ Interface check error: {str(e)}")
                         
@@ -2543,8 +2543,8 @@ def get_database_connection(connection_string):
     
     return None
 
-def check_external_database_status(order_numbers, marketplace):
-    """Check order status in external database - OPTIMIZED VERSION"""
+def check_external_database_status(order_numbers, marketplace, chunk_size=100):
+    """Check order status in external database - OPTIMIZED VERSION with adaptive chunking"""
     try:
         # Get the appropriate field mapping for the marketplace
         field_mapping = MARKETPLACE_FIELD_MAPPING.get(marketplace.lower())
@@ -2555,8 +2555,8 @@ def check_external_database_status(order_numbers, marketplace):
         # Minimize console logs for better performance
         # Removed external database logging
         
-        # OPTIMIZATION: Use smaller chunk size for better timeout handling
-        MAX_PARAMS_PER_QUERY = min(100, len(order_numbers))  # Reduced to 100 parameters for faster processing
+        # ADAPTIVE: Use dynamic chunk size based on upload size
+        MAX_PARAMS_PER_QUERY = min(chunk_size, len(order_numbers))  # Adaptive chunk size
         all_results = {}
         
         # Get single connection for all chunks (connection pooling) - OPTIMIZED
@@ -2706,14 +2706,14 @@ def check_ord_line_status(order_numbers, marketplace):
         print(f"❌ Error checking ord_line: {str(e)}")
         return {}
 
-def check_interface_status(order_numbers, marketplace):
-    """Check interface status by combining external database and ord_line checks - ULTRA-OPTIMIZED"""
+def check_interface_status(order_numbers, marketplace, chunk_size=100):
+    """Check interface status by combining external database and ord_line checks - ULTRA-OPTIMIZED with adaptive chunking"""
     try:
         # Minimize console logs for better performance
         # Removed interface check logging
         
         # ULTRA-OPTIMIZATION: Single query with LEFT JOIN (no separate ord_line query needed)
-        external_results = check_external_database_status(order_numbers, marketplace)
+        external_results = check_external_database_status(order_numbers, marketplace, chunk_size)
         
         # Process results (ord_line status already included in external_results via LEFT JOIN)
         all_results = {}
