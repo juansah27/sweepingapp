@@ -10,6 +10,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-sweeping_apps}
       - POSTGRES_USER=${POSTGRES_USER:-sweeping_user}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-sweeping_password}
+    command: postgres -c max_connections=200 -c shared_buffers=256MB -c effective_cache_size=1GB
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:

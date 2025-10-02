@@ -352,13 +352,24 @@ if not POSTGRES_HOST:
     raise ValueError("POSTGRES_HOST environment variable is required. SQLite fallback has been removed.")
 
 SQLALCHEMY_DATABASE_URL = POSTGRES_DATABASE_URL
+
+# Production vs Development pool settings
+if ENVIRONMENT == "production":
+    # Production: Smaller pool per worker (4 workers total)
+    POOL_SIZE = 5
+    MAX_OVERFLOW = 10
+else:
+    # Development: Larger pool for single worker
+    POOL_SIZE = 10
+    MAX_OVERFLOW = 20
+
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
-    pool_size=10,  # Increased for better performance
-    max_overflow=20,  # Increased for better performance
+    pool_size=POOL_SIZE,
+    max_overflow=MAX_OVERFLOW,
     pool_pre_ping=True,
-    pool_recycle=3600,  # 1 hour
-    pool_timeout=60,  # Increased timeout for getting connection
+    pool_recycle=300,  # Recycle connections after 5 minutes (reduced from 1 hour)
+    pool_timeout=30,  # Reduced timeout for getting connection
     echo=False,  # Set to True for SQL debugging
     connect_args={
         "options": "-c statement_timeout=300000"  # 5 minutes statement timeout
