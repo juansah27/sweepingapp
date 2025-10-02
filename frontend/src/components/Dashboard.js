@@ -568,7 +568,7 @@ const Dashboard = () => {
           remark: newRemark || ''
         });
         
-        response = await fetch(`/not-interfaced-order/remark?${params}`, {
+        response = await fetch(`/api/not-interfaced-order/remark?${params}`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`
