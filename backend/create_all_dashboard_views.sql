@@ -1,8 +1,19 @@
 -- Complete Dashboard Views Creation Script
 -- Run this to recreate ALL dashboard views after ALTER TABLE or database restore
 
+-- Drop all views first (in reverse dependency order)
+DROP VIEW IF EXISTS dashboard_order_status_summary CASCADE;
+DROP VIEW IF EXISTS dashboard_interface_status_summary CASCADE;
+DROP VIEW IF EXISTS dashboard_hourly_evolution CASCADE;
+DROP VIEW IF EXISTS dashboard_daily_evolution CASCADE;
+DROP VIEW IF EXISTS dashboard_not_interfaced_orders CASCADE;
+DROP VIEW IF EXISTS dashboard_recent_uploads CASCADE;
+DROP VIEW IF EXISTS dashboard_pic_performance CASCADE;
+DROP VIEW IF EXISTS dashboard_batch_distribution CASCADE;
+DROP VIEW IF EXISTS dashboard_marketplace_distribution CASCADE;
+
 -- 1. dashboard_marketplace_distribution
-CREATE OR REPLACE VIEW dashboard_marketplace_distribution AS
+CREATE VIEW dashboard_marketplace_distribution AS
 SELECT 
     "Marketplace" as marketplace,
     COUNT(*) as count,
@@ -15,7 +26,7 @@ GROUP BY "Marketplace"
 ORDER BY count DESC;
 
 -- 2. dashboard_batch_distribution
-CREATE OR REPLACE VIEW dashboard_batch_distribution AS
+CREATE VIEW dashboard_batch_distribution AS
 SELECT 
     "Batch" as batch,
     COUNT(*) as count,
@@ -31,7 +42,7 @@ GROUP BY "Batch"
 ORDER BY count DESC;
 
 -- 3. dashboard_pic_performance
-CREATE OR REPLACE VIEW dashboard_pic_performance AS
+CREATE VIEW dashboard_pic_performance AS
 SELECT 
     "PIC" as pic,
     COUNT(*) as total_uploads,
@@ -50,7 +61,7 @@ GROUP BY "PIC"
 ORDER BY total_uploads DESC;
 
 -- 4. dashboard_recent_uploads
-CREATE OR REPLACE VIEW dashboard_recent_uploads AS
+CREATE VIEW dashboard_recent_uploads AS
 SELECT 
     "Batch" as batch,
     "Marketplace" as marketplace,
@@ -70,7 +81,7 @@ GROUP BY "Batch", "Marketplace", "Brand", "PIC"
 ORDER BY upload_date DESC;
 
 -- 5. dashboard_not_interfaced_orders
-CREATE OR REPLACE VIEW dashboard_not_interfaced_orders AS
+CREATE VIEW dashboard_not_interfaced_orders AS
 SELECT 
     "Id" as id,
     "Marketplace" as marketplace,
@@ -88,7 +99,7 @@ FROM uploaded_orders
 WHERE "InterfaceStatus" != 'Interface';
 
 -- 6. dashboard_daily_evolution
-CREATE OR REPLACE VIEW dashboard_daily_evolution AS
+CREATE VIEW dashboard_daily_evolution AS
 SELECT 
     DATE("UploadDate") as date,
     COUNT(*) as count,
@@ -104,7 +115,7 @@ GROUP BY DATE("UploadDate")
 ORDER BY date DESC;
 
 -- 7. dashboard_hourly_evolution
-CREATE OR REPLACE VIEW dashboard_hourly_evolution AS
+CREATE VIEW dashboard_hourly_evolution AS
 SELECT 
     EXTRACT(HOUR FROM "UploadDate")::integer as hour,
     LPAD(EXTRACT(HOUR FROM "UploadDate")::text, 2, '0') || ':00' as hour_label,
@@ -122,7 +133,7 @@ GROUP BY EXTRACT(HOUR FROM "UploadDate")
 ORDER BY hour;
 
 -- 8. dashboard_interface_status_summary
-CREATE OR REPLACE VIEW dashboard_interface_status_summary AS
+CREATE VIEW dashboard_interface_status_summary AS
 SELECT 
     "InterfaceStatus" as interface_status,
     COUNT(*) as count,
@@ -135,7 +146,7 @@ GROUP BY "InterfaceStatus"
 ORDER BY count DESC;
 
 -- 9. dashboard_order_status_summary
-CREATE OR REPLACE VIEW dashboard_order_status_summary AS
+CREATE VIEW dashboard_order_status_summary AS
 SELECT 
     "OrderStatusFlexo" as order_status,
     COUNT(*) as count,
