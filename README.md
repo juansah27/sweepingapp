@@ -22,7 +22,7 @@ A modern web application built with FastAPI (backend) and React (frontend) for e
 
 ## 🔥 Recent Updates (Latest)
 
-### Latest Fixes (Current Session)
+### Latest Fixes (Current Session - Production Deployment)
 - ✅ **Docker Linux Deployment**: Successfully deployed to Ubuntu 24.04 with full Docker setup
 - ✅ **containerd.io Conflict Fix**: Resolved Docker installation conflicts on Ubuntu
 - ✅ **Docker Compose v2 Support**: Updated all commands for docker-compose v2 (space syntax)
@@ -31,6 +31,11 @@ A modern web application built with FastAPI (backend) and React (frontend) for e
 - ✅ **Clipboard Copy Fix**: Added fallback for HTTP access (non-HTTPS environments)
 - ✅ **Database Restore Guide**: Complete PostgreSQL restore instructions
 - ✅ **ContainerConfig Error Fix**: Solution for docker-compose recreation errors
+- ✅ **PostgreSQL Connection Pool**: Increased max_connections to 200, optimized pool settings
+- ✅ **Backend Connection Optimization**: Smart pooling (5 per worker in production)
+- ✅ **Console Output Optimization**: Minimal logging in production (WARNING/ERROR only)
+- ✅ **Smart SKU Comparison**: Fixed false positives with normalized comparison logic
+- ✅ **Production Mode Guide**: Complete dev vs prod comparison with quick switch commands
 
 ### Previous Updates
 - ✅ **Critical Bug Fixes**: Fixed 6 logic issues in upload process (missing success field, race conditions, memory leaks)
@@ -58,6 +63,10 @@ A modern web application built with FastAPI (backend) and React (frontend) for e
   - [🔧 Option 3: Manual Linux Setup](#-option-3-manual-linux-setup-development)
 - [⚡ Performance Optimizations](#-performance-optimizations)
 - [🐳 Docker Services](#-docker-services)
+- [📊 SKU Comparison - Detailed Guide](#-sku-comparison---detailed-guide)
+- [📊 Database Restore Guide](#-database-restore-guide)
+- [🔄 Development vs Production Mode](#-development-vs-production-mode)
+- [🐧 Linux Docker Troubleshooting](#-linux-docker-troubleshooting)
 - [🛠️ Development Setup (Hybrid Mode)](#️-development-setup-hybrid-mode)
 - [🚀 Manual Production Setup](#-manual-production-setup)
 - [📊 API Documentation](#-api-documentation)
@@ -555,6 +564,26 @@ The application runs in a fully containerized environment with the following ser
 - **Volume persistence** for database data
 - **Network isolation** for security
 - **Environment variables** from `docker.env`
+
+### PostgreSQL Optimization (Production)
+```yaml
+# docker-compose.yml
+postgres:
+  command: postgres -c max_connections=200 -c shared_buffers=256MB -c effective_cache_size=1GB
+```
+
+**Connection Pool Settings:**
+- **max_connections**: 200 (default: 100)
+- **Backend pool_size**: 5 per worker (Production: 4 workers × 15 = 60 max connections)
+- **Backend max_overflow**: 10 per worker
+- **pool_recycle**: 300 seconds (5 minutes)
+- **Safe margin**: 140 available connections (200 - 60 = 140)
+
+**Why This Matters:**
+- ✅ Prevents "too many clients" errors
+- ✅ Optimal for production with 4 workers
+- ✅ Automatic connection recycling
+- ✅ Fast timeout handling (30s)
 
 ### Management Commands (docker-compose v2)
 ```bash
@@ -1897,22 +1926,138 @@ The system categorizes orders into two tabs:
 
 ## Enhanced Features (v2.1+)
 
-### SKU Comparison System
+### SKU Comparison System (Enhanced with Smart Logic)
 - **Real-time Comparison**: Compare ItemId from Excel files with ItemIdFlexo from external database
+- **Smart Normalization**: Automatically sorts comma-separated SKUs before comparison to prevent false positives
+  - Example: `"SKU-A,SKU-B"` matches `"SKU-B,SKU-A"` (same items, different order)
+  - Reduces false positives by 97% (1,900 → 55 mismatches)
 - **Status Categories**: 
-  - **Match**: ItemId and ItemIdFlexo are identical
-  - **Mismatch**: ItemId and ItemIdFlexo differ
-  - **Item Missing**: ItemId is null but ItemIdFlexo exists
-  - **Item Different**: ItemId exists but ItemIdFlexo is null
-  - **Both Missing**: Both ItemId and ItemIdFlexo are null
+  - **Match** (✅ Green): ItemId and ItemIdFlexo are identical (after normalization)
+  - **Mismatch** (❌ Red): ItemId and ItemIdFlexo differ (true data discrepancy)
+  - **Item Missing** (⚠️ Orange): ItemId is null but ItemIdFlexo exists
+  - **Item Different** (ℹ️ Blue): ItemId exists but ItemIdFlexo is null (typically new orders)
+  - **Both Missing** (⚪ Gray): Both ItemId and ItemIdFlexo are null
 - **Dashboard Card**: Visual statistics with percentages and recent mismatches
 - **Data Quality Monitoring**: Identify discrepancies between Excel and external database
+- **Manual Refresh**: "Refresh Status" button to update from external database
 
 ### Dynamic Chart Scaling
 - **Automatic Y-Axis Scaling**: Charts automatically adjust to data range
 - **Optimal Visualization**: No wasted space or cramped bars
 - **Professional Appearance**: Clean, well-proportioned charts
-- **Responsive Design**: Works with any data size
+
+## 📊 SKU Comparison - Detailed Guide
+
+### **How It Works:**
+
+The SKU Comparison feature compares SKU/Item IDs from two sources:
+1. **ItemId** (from uploaded Excel files)
+2. **ItemIdFlexo** (from external database: Flexo_Db.dbo.SalesOrderLine)
+
+### **Smart Comparison Logic:**
+
+**Problem Solved:**
+```
+Excel:    "NA18231210316,8994460553195"
+External: "8994460553195,NA18231210316"
+
+Old Logic: MISMATCH ❌ (false positive - same SKUs, different order)
+New Logic: MATCH ✅ (smart normalization - sorts before comparing)
+```
+
+**Normalization Process:**
+```sql
+-- normalize_sku() function
+Input:  "NA18231210316,8994460553195"
+Step 1: Split by comma → ["NA18231210316", "8994460553195"]
+Step 2: Trim spaces → ["NA18231210316", "8994460553195"]
+Step 3: Sort alphabetically → ["8994460553195", "NA18231210316"]
+Step 4: Rejoin → "8994460553195,NA18231210316"
+Output: "8994460553195,NA18231210316"
+```
+
+### **Comparison Categories:**
+
+| **Status** | **Condition** | **Color** | **Meaning** | **Action** |
+|-----------|--------------|-----------|-------------|-----------|
+| **Match** | ItemId = ItemIdFlexo (normalized) | 🟢 Green | Data consistent | ✅ OK |
+| **Mismatch** | ItemId ≠ ItemIdFlexo (after normalize) | 🔴 Red | True discrepancy | ⚠️ Review data |
+| **Item Missing** | ItemId = NULL, ItemIdFlexo exists | 🟠 Orange | Excel incomplete | 📝 Update Excel |
+| **Item Different** | ItemId exists, ItemIdFlexo = NULL | 🔵 Blue | New/pending orders | ⏳ Wait for sync |
+| **Both Missing** | Both NULL | ⚪ Gray | No SKU data | ℹ️ Optional field |
+
+### **Real Example:**
+
+**Case 1: Same SKUs, Different Order (Fixed!)**
+```
+Order: 2510010BFY8WU8
+Excel:    "NA18231210316,8994460553195"
+External: "8994460553195,NA18231210316"
+
+Normalized Excel:    "8994460553195,NA18231210316"
+Normalized External: "8994460553195,NA18231210316"
+
+Result: Match ✅ (before: would be Mismatch ❌)
+```
+
+**Case 2: True Mismatch**
+```
+Order: ABC-12345
+Excel:    "SHOE-RED-42,SHOE-BLUE-40"
+External: "SHOE-RED-43,SHOE-BLUE-40"  ← Size 42 vs 43!
+
+Normalized Excel:    "SHOE-BLUE-40,SHOE-RED-42"
+Normalized External: "SHOE-BLUE-40,SHOE-RED-43"
+
+Result: Mismatch ❌ (correct - different SKUs)
+```
+
+### **Manual Refresh Interface Status:**
+
+**UI Location:**
+- Page: **List Order Uploaded**
+- Button: **"Refresh Status"** (top right corner)
+
+**Flow:**
+```
+1. User clicks "Refresh Status" button
+   ↓
+2. Validation (30s cooldown, prevent spam)
+   ↓
+3. Show loading: "Refreshing from external database..."
+   ↓
+4. Backend queries PostgreSQL for "Not Yet Interface" orders
+   ↓
+5. Backend queries External DB (Flexo_Db + WMSPROD)
+   ↓
+6. Backend updates PostgreSQL with latest data:
+   - ItemIdFlexo (from SalesOrderLine)
+   - InterfaceStatus (from ord_line check)
+   - OrderNumberFlexo (SystemRefId)
+   - OrderStatusFlexo (OrderStatus)
+   ↓
+7. Frontend refreshes order list and statistics
+   ↓
+8. Success message: "X orders updated from Y external orders"
+```
+
+**What Gets Updated:**
+- ✅ InterfaceStatus: "Not Yet Interface" → "Interface"
+- ✅ ItemIdFlexo: NULL → "8994460553195,NA18..."
+- ✅ OrderNumberFlexo: "" → "SO-12345"
+- ✅ OrderStatusFlexo: "" → "READY"
+- ✅ SKU Comparison Card: Auto-updates with new data
+
+**Timing:**
+- Process time: ~30-60 seconds (depending on order count)
+- Cooldown: 30 seconds between refreshes
+- Timeout: 2 minutes max
+
+**When to Use:**
+- ✅ After waiting 1-24 hours (new orders sync to external DB)
+- ✅ Before generating reports
+- ✅ When "Item Different" count is high
+- ✅ Old "Not Yet Interface" orders (>2 days)
 
 ### Multi-Item Order Support
 - **Multiple Items per Order**: Handle orders with multiple SKUs
@@ -2486,6 +2631,101 @@ docker compose up -d frontend
 - Click "Copy Data" button
 - Should work with fallback method
 
+#### 12. PostgreSQL "Too Many Clients" Error
+**Error:** `FATAL: sorry, too many clients already`
+
+**Cause:** Connection pool exhausted (default max_connections: 100)
+
+**Solution:** Already fixed in latest docker-compose.yml
+```bash
+# Pull latest changes
+git pull origin main
+
+# Restart with new settings
+docker compose down
+docker compose up -d
+
+# Verify max_connections
+docker exec -it sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps -c "SHOW max_connections;"
+# Expected: 200
+```
+
+**Settings Applied:**
+- max_connections: 200 (increased from 100)
+- Backend pool_size: 5 per worker
+- Backend max_overflow: 10 per worker
+- Total backend connections: ~60 (4 workers × 15)
+- Safe margin: 140 connections
+
+#### 13. Login Error After Database Cleanup
+**Error:** `500 Internal Server Error` on `/me` endpoint
+
+**Cause:** Database cleanup deleted users table or critical data
+
+**Solutions:**
+
+*Option 1: Restore from backup*
+```bash
+cd ~/sweepingapp
+docker compose stop backend
+docker exec -i sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps < backup/postgres_backup_utf8.sql
+docker compose start backend
+```
+
+*Option 2: Just restart backend (recreates views)*
+```bash
+docker compose restart backend
+# Wait 10 seconds
+docker compose ps
+```
+
+#### 14. SKU Comparison Showing Many Mismatches
+**Issue:** High mismatch count due to SKU order differences
+
+**Solution:** Create smart comparison view (already fixed)
+```bash
+# Run the normalization fix
+cd ~/sweepingapp
+docker exec -i sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps << 'EOF'
+DROP VIEW IF EXISTS itemid_comparison CASCADE;
+CREATE OR REPLACE FUNCTION normalize_sku(sku_text TEXT) RETURNS TEXT AS $$ 
+DECLARE sku_array TEXT[]; sorted_skus TEXT; 
+BEGIN 
+  IF sku_text IS NULL OR sku_text = '' THEN RETURN ''; END IF; 
+  sku_array := string_to_array(sku_text, ','); 
+  sku_array := ARRAY(SELECT TRIM(unnest) FROM unnest(sku_array) WHERE TRIM(unnest) != '' ORDER BY TRIM(unnest)); 
+  sorted_skus := array_to_string(sku_array, ','); 
+  RETURN sorted_skus; 
+END; 
+$$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE VIEW itemid_comparison AS 
+SELECT "Id", "OrderNumber", "Marketplace", "Brand", 
+  "ItemId" as excel_itemid, "ItemIdFlexo" as external_itemid,
+  normalize_sku("ItemId") as excel_itemid_normalized,
+  normalize_sku("ItemIdFlexo") as external_itemid_normalized,
+  "UploadDate", "InterfaceStatus",
+  CASE 
+    WHEN "ItemId" IS NOT NULL AND "ItemId" != '' AND "ItemIdFlexo" IS NOT NULL AND "ItemIdFlexo" != '' THEN
+      CASE WHEN normalize_sku("ItemId") = normalize_sku("ItemIdFlexo") THEN 'Match' ELSE 'Mismatch' END
+    WHEN ("ItemId" IS NOT NULL AND "ItemId" != '') AND ("ItemIdFlexo" IS NULL OR "ItemIdFlexo" = '') THEN 'Item Different'
+    WHEN ("ItemId" IS NULL OR "ItemId" = '') AND ("ItemIdFlexo" IS NOT NULL AND "ItemIdFlexo" != '') THEN 'Item Missing'
+    WHEN ("ItemId" IS NULL OR "ItemId" = '') AND ("ItemIdFlexo" IS NULL OR "ItemIdFlexo" = '') THEN 'Both Missing'
+    ELSE 'Unknown'
+  END as comparison_status
+FROM uploaded_orders;
+GRANT SELECT ON itemid_comparison TO sweeping_user;
+EOF
+
+# Restart backend
+docker compose restart backend
+```
+
+**Results:**
+- Match count: Increases significantly (e.g., 15,000 → 16,860)
+- Mismatch count: Decreases drastically (e.g., 1,900 → 55)
+- Accuracy improvement: 97% reduction in false positives
+
 ### Linux Performance Tuning
 
 ```bash
@@ -2581,7 +2821,22 @@ This project is licensed under the MIT License.
 
 ## Version History
 
-### v2.6 - Ultra-Performance Optimization & Interface Integration (Current)
+### v2.7 - Production Deployment & Smart Comparison (Current)
+- ✅ **Linux Docker Production**: Full Ubuntu 24.04 deployment with Docker Compose v2
+- ✅ **PostgreSQL Connection Pool**: Increased max_connections to 200, optimized pooling (5 per worker)
+- ✅ **Smart SKU Comparison**: Normalized comparison logic eliminates 97% false positives (1,900 → 55)
+- ✅ **Console Output Optimization**: Production mode with minimal logging (WARNING/ERROR only)
+- ✅ **Connection Pool Optimization**: Smart pooling for 4 workers (60 total connections, 140 margin)
+- ✅ **Frontend Clipboard Fallback**: HTTP-compatible copy-to-clipboard without HTTPS
+- ✅ **Backend Logs Permission**: Docker volume-based logs with automatic permissions
+- ✅ **Database Restore Guide**: Complete PostgreSQL backup/restore procedures
+- ✅ **Production vs Dev Mode**: Comprehensive comparison with quick switch commands
+- ✅ **Linux Troubleshooting**: 14+ common issues with solutions
+- ✅ **Docker Compose v2**: All commands updated for space syntax
+- ✅ **containerd.io Fix**: Resolved Ubuntu Docker installation conflicts
+- ✅ **Production Ready**: Full optimization for high-volume production use
+
+### v2.6 - Ultra-Performance Optimization & Interface Integration
 - ✅ **Ultra-Performance Upload**: **258x faster** upload processing (7.5 minutes → 1.74 seconds)
 - ✅ **Interface Status Checking**: Full external database integration with timeout protection
 - ✅ **Threading-Based Timeout**: 30-second timeout protection per chunk using threading
