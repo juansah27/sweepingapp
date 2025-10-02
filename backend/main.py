@@ -6403,7 +6403,7 @@ async def update_not_uploaded_history_remark(
         logger.error(f"Error updating history remark: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.put("/not-interfaced-order/remark")
+@app.put("/api/not-interfaced-order/remark")
 async def update_not_interfaced_order_remark(
     order_number: str = Query(..., description="Order number"),
     marketplace: str = Query(..., description="Marketplace name"),
