@@ -11,6 +11,16 @@ DROP VIEW IF EXISTS dashboard_recent_uploads CASCADE;
 DROP VIEW IF EXISTS dashboard_pic_performance CASCADE;
 DROP VIEW IF EXISTS dashboard_batch_distribution CASCADE;
 DROP VIEW IF EXISTS dashboard_marketplace_distribution CASCADE;
+DROP VIEW IF EXISTS clean_orders CASCADE;
+
+-- 0. clean_orders (deduplicated orders - MUST BE CREATED FIRST)
+CREATE VIEW clean_orders AS
+SELECT DISTINCT ON ("OrderNumber") 
+    "Id", "Marketplace", "Brand", "OrderNumber", "OrderStatus", "AWB", "Transporter", 
+    "OrderDate", "SLA", "Batch", "PIC", "UploadDate", "Remarks", "InterfaceStatus", "TaskId", 
+    "OrderNumberFlexo", "OrderStatusFlexo"
+FROM uploaded_orders
+ORDER BY "OrderNumber", "UploadDate" DESC;
 
 -- 1. dashboard_marketplace_distribution
 CREATE VIEW dashboard_marketplace_distribution AS
@@ -159,6 +169,7 @@ GROUP BY "OrderStatusFlexo"
 ORDER BY count DESC;
 
 -- Grant permissions on all views
+GRANT SELECT ON clean_orders TO sweeping_user;
 GRANT SELECT ON dashboard_marketplace_distribution TO sweeping_user;
 GRANT SELECT ON dashboard_batch_distribution TO sweeping_user;
 GRANT SELECT ON dashboard_pic_performance TO sweeping_user;
