@@ -34,18 +34,20 @@ ORDER BY count DESC;
 CREATE OR REPLACE VIEW dashboard_pic_performance AS
 SELECT 
     "PIC" as pic,
-    COUNT(*) as total_orders,
-    COUNT(CASE WHEN "InterfaceStatus" = 'Interface' THEN 1 END) as interfaced_orders,
-    COUNT(CASE WHEN "InterfaceStatus" != 'Interface' THEN 1 END) as not_interfaced_orders,
+    COUNT(*) as total_uploads,
+    COUNT(CASE WHEN "InterfaceStatus" = 'Interface' THEN 1 END) as interfaced_uploads,
+    COUNT(CASE WHEN "InterfaceStatus" != 'Interface' THEN 1 END) as not_interfaced_uploads,
     ROUND(
         COUNT(CASE WHEN "InterfaceStatus" = 'Interface' THEN 1 END) * 100.0 / 
         NULLIF(COUNT(*), 0), 2
     ) as interface_rate,
+    COUNT(DISTINCT "Brand") as unique_brands,
+    COUNT(DISTINCT "Marketplace") as unique_marketplaces,
     MAX("UploadDate") as last_upload_date
 FROM uploaded_orders 
 WHERE "PIC" IS NOT NULL AND "PIC" != ''
 GROUP BY "PIC" 
-ORDER BY total_orders DESC;
+ORDER BY total_uploads DESC;
 
 -- 4. dashboard_recent_uploads
 CREATE OR REPLACE VIEW dashboard_recent_uploads AS
@@ -89,9 +91,9 @@ WHERE "InterfaceStatus" != 'Interface';
 CREATE OR REPLACE VIEW dashboard_daily_evolution AS
 SELECT 
     DATE("UploadDate") as date,
-    COUNT(*) as total_orders,
-    COUNT(CASE WHEN "InterfaceStatus" = 'Interface' THEN 1 END) as interfaced_orders,
-    COUNT(CASE WHEN "InterfaceStatus" != 'Interface' THEN 1 END) as not_interfaced_orders,
+    COUNT(*) as count,
+    COUNT(CASE WHEN "InterfaceStatus" = 'Interface' THEN 1 END) as interfaced_count,
+    COUNT(CASE WHEN "InterfaceStatus" != 'Interface' THEN 1 END) as not_interfaced_count,
     ROUND(
         COUNT(CASE WHEN "InterfaceStatus" = 'Interface' THEN 1 END) * 100.0 / 
         NULLIF(COUNT(*), 0), 2
@@ -104,10 +106,11 @@ ORDER BY date DESC;
 -- 7. dashboard_hourly_evolution
 CREATE OR REPLACE VIEW dashboard_hourly_evolution AS
 SELECT 
-    DATE_TRUNC('hour', "UploadDate") as hour,
-    COUNT(*) as total_orders,
-    COUNT(CASE WHEN "InterfaceStatus" = 'Interface' THEN 1 END) as interfaced_orders,
-    COUNT(CASE WHEN "InterfaceStatus" != 'Interface' THEN 1 END) as not_interfaced_orders,
+    EXTRACT(HOUR FROM "UploadDate")::integer as hour,
+    LPAD(EXTRACT(HOUR FROM "UploadDate")::text, 2, '0') || ':00' as hour_label,
+    COUNT(*) as count,
+    COUNT(CASE WHEN "InterfaceStatus" = 'Interface' THEN 1 END) as interfaced_count,
+    COUNT(CASE WHEN "InterfaceStatus" != 'Interface' THEN 1 END) as not_interfaced_count,
     ROUND(
         COUNT(CASE WHEN "InterfaceStatus" = 'Interface' THEN 1 END) * 100.0 / 
         NULLIF(COUNT(*), 0), 2
@@ -115,8 +118,8 @@ SELECT
 FROM uploaded_orders 
 WHERE "UploadDate" IS NOT NULL
   AND "UploadDate" >= CURRENT_DATE - INTERVAL '7 days'
-GROUP BY DATE_TRUNC('hour', "UploadDate")
-ORDER BY hour DESC;
+GROUP BY EXTRACT(HOUR FROM "UploadDate")
+ORDER BY hour;
 
 -- 8. dashboard_interface_status_summary
 CREATE OR REPLACE VIEW dashboard_interface_status_summary AS
