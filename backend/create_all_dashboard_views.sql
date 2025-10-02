@@ -150,7 +150,7 @@ ORDER BY hour;
 -- 8. dashboard_interface_status_summary
 CREATE VIEW dashboard_interface_status_summary AS
 SELECT 
-    "InterfaceStatus" as interface_status,
+    "InterfaceStatus" as status,
     COUNT(*) as count,
     ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM uploaded_orders), 2) as percentage,
     MIN("UploadDate") as first_seen,
