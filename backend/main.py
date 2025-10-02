@@ -6415,14 +6415,20 @@ async def update_not_interfaced_order_remark(
     try:
         logger.info(f"Updating not interfaced order remark for order_number={order_number}, marketplace={marketplace}, remark={remark}")
         
-        # Find the order in UploadedOrder table
+        # Find the order in UploadedOrder table (case-insensitive for marketplace)
         order = db.query(UploadedOrder).filter(
             UploadedOrder.OrderNumber == order_number,
-            UploadedOrder.Marketplace == marketplace
+            func.upper(UploadedOrder.Marketplace) == marketplace.upper()
         ).first()
         
         if not order:
-            raise HTTPException(status_code=404, detail="Order not found")
+            # Debug: Check if order exists with different criteria
+            logger.warning(f"Order not found with exact match. Searching alternatives...")
+            similar_orders = db.query(UploadedOrder).filter(
+                UploadedOrder.OrderNumber.like(f'%{order_number}%')
+            ).limit(5).all()
+            logger.warning(f"Found {len(similar_orders)} similar orders")
+            raise HTTPException(status_code=404, detail=f"Order not found: {order_number} in {marketplace}")
         
         # Update the remark
         order.Remarks = remark
