@@ -163,7 +163,7 @@ ORDER BY count DESC;
 -- 9. dashboard_order_status_summary
 CREATE VIEW dashboard_order_status_summary AS
 SELECT 
-    "OrderStatusFlexo" as order_status,
+    "OrderStatusFlexo" as status,
     COUNT(*) as count,
     ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM uploaded_orders), 2) as percentage,
     COUNT(CASE WHEN "InterfaceStatus" = 'Interface' THEN 1 END) as interfaced_count,
