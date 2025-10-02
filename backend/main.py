@@ -6415,10 +6415,10 @@ async def update_not_interfaced_order_remark(
     try:
         logger.info(f"Updating not interfaced order remark for order_number={order_number}, marketplace={marketplace}, remark={remark}")
         
-        # Find the order in UpdateUploadedOrder table
-        order = db.query(UpdateUploadedOrder).filter(
-            UpdateUploadedOrder.OrderNumber == order_number,
-            UpdateUploadedOrder.Marketplace == marketplace
+        # Find the order in UploadedOrder table
+        order = db.query(UploadedOrder).filter(
+            UploadedOrder.OrderNumber == order_number,
+            UploadedOrder.Marketplace == marketplace
         ).first()
         
         if not order:
