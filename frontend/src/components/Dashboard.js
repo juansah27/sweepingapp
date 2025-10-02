@@ -654,17 +654,19 @@ const Dashboard = () => {
         exportParams = `?${params.toString()}`;
       }
       
-      // Simulate progress updates
-      setExportProgress(20);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Start export immediately
+      setExportProgress(10);
       
-      setExportProgress(40);
       const response = await api.get(`/api/dashboard/export${exportParams}`, {
-        responseType: 'blob'
+        responseType: 'blob',
+        onDownloadProgress: (progressEvent) => {
+          // Real progress based on download
+          if (progressEvent.total) {
+            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setExportProgress(10 + (progress * 0.8)); // 10% to 90%
+          }
+        }
       });
-
-      setExportProgress(70);
-      await new Promise(resolve => setTimeout(resolve, 300));
 
       // Get the filename from the response headers
       const contentDisposition = response.headers['content-disposition'];
@@ -672,7 +674,7 @@ const Dashboard = () => {
         ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
         : `dashboard-export-${dayjs.tz().format('YYYY-MM-DD')}.xlsx`;
 
-      setExportProgress(90);
+      setExportProgress(95);
       
       // Create blob and download
       const blob = new Blob([response.data], { 
@@ -688,7 +690,6 @@ const Dashboard = () => {
       window.URL.revokeObjectURL(url);
 
       setExportProgress(100);
-      await new Promise(resolve => setTimeout(resolve, 500));
       
       message.success('Dashboard data exported successfully!');
     } catch (error) {

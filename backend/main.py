@@ -10005,48 +10005,58 @@ async def export_dashboard_data(
         
         not_interfaced_orders = not_interfaced_query.all()
         
-        # Create Excel file
+        # Create Excel file - OPTIMIZED with xlsxwriter for faster performance
         output = io.BytesIO()
         
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            # Sheet 1: Orders Statistics
-            orders_df = pd.DataFrame([{
-                'Marketplace': order.Marketplace,
-                'Brand': order.Brand,
-                'Order Number': order.OrderNumber,
-                'Batch': order.Batch,
-                'Interface Status': order.InterfaceStatus,
-                'Upload Date': make_timezone_naive(order.UploadDate),
-                'PIC': order.PIC
-            } for order in orders_stats])
+        # Use xlsxwriter engine (faster than openpyxl)
+        with pd.ExcelWriter(output, engine='xlsxwriter', engine_kwargs={'options': {'strings_to_numbers': False}}) as writer:
+            # Sheet 1: Orders Statistics - VECTORIZED
+            if orders_stats:
+                orders_df = pd.DataFrame({
+                    'Marketplace': [order.Marketplace for order in orders_stats],
+                    'Brand': [order.Brand for order in orders_stats],
+                    'Order Number': [order.OrderNumber for order in orders_stats],
+                    'Batch': [order.Batch for order in orders_stats],
+                    'Interface Status': [order.InterfaceStatus for order in orders_stats],
+                    'Upload Date': [make_timezone_naive(order.UploadDate) for order in orders_stats],
+                    'PIC': [order.PIC for order in orders_stats]
+                })
+            else:
+                orders_df = pd.DataFrame(columns=['Marketplace', 'Brand', 'Order Number', 'Batch', 'Interface Status', 'Upload Date', 'PIC'])
             orders_df.to_excel(writer, sheet_name='Orders Statistics', index=False)
             
-            # Sheet 2: Upload History
-            upload_df = pd.DataFrame([{
-                'Marketplace': history.marketplace,
-                'Brand': history.brand,
-                'PIC': history.pic,
-                'Batch': history.batch,
-                'Upload Date': make_timezone_naive(history.upload_date)
-            } for history in upload_history])
+            # Sheet 2: Upload History - VECTORIZED
+            if upload_history:
+                upload_df = pd.DataFrame({
+                    'Marketplace': [history.marketplace for history in upload_history],
+                    'Brand': [history.brand for history in upload_history],
+                    'PIC': [history.pic for history in upload_history],
+                    'Batch': [history.batch for history in upload_history],
+                    'Upload Date': [make_timezone_naive(history.upload_date) for history in upload_history]
+                })
+            else:
+                upload_df = pd.DataFrame(columns=['Marketplace', 'Brand', 'PIC', 'Batch', 'Upload Date'])
             upload_df.to_excel(writer, sheet_name='Upload History', index=False)
             
-            # Sheet 3: Not Uploaded Items
-            not_uploaded_df = pd.DataFrame(not_uploaded)
+            # Sheet 3: Not Uploaded Items - DIRECT from list (already optimized)
+            not_uploaded_df = pd.DataFrame(not_uploaded) if not_uploaded else pd.DataFrame(columns=['marketplace', 'brand', 'batch', 'remark', 'created_at'])
             not_uploaded_df.to_excel(writer, sheet_name='Not Uploaded Items', index=False)
             
-            # Sheet 4: Not Interfaced Orders
-            not_interfaced_df = pd.DataFrame([{
-                'Marketplace': order.Marketplace,
-                'Brand': order.Brand,
-                'Order Number': order.OrderNumber,
-                'Batch': order.Batch,
-                'Order Status': order.OrderStatus,
-                'Interface Status': order.InterfaceStatus,
-                'Remark': order.Remarks,
-                'Upload Date': make_timezone_naive(order.UploadDate),
-                'PIC': order.PIC
-            } for order in not_interfaced_orders])
+            # Sheet 4: Not Interfaced Orders - VECTORIZED
+            if not_interfaced_orders:
+                not_interfaced_df = pd.DataFrame({
+                    'Marketplace': [order.Marketplace for order in not_interfaced_orders],
+                    'Brand': [order.Brand for order in not_interfaced_orders],
+                    'Order Number': [order.OrderNumber for order in not_interfaced_orders],
+                    'Batch': [order.Batch for order in not_interfaced_orders],
+                    'Order Status': [order.OrderStatus for order in not_interfaced_orders],
+                    'Interface Status': [order.InterfaceStatus for order in not_interfaced_orders],
+                    'Remark': [order.Remarks for order in not_interfaced_orders],
+                    'Upload Date': [make_timezone_naive(order.UploadDate) for order in not_interfaced_orders],
+                    'PIC': [order.PIC for order in not_interfaced_orders]
+                })
+            else:
+                not_interfaced_df = pd.DataFrame(columns=['Marketplace', 'Brand', 'Order Number', 'Batch', 'Order Status', 'Interface Status', 'Remark', 'Upload Date', 'PIC'])
             not_interfaced_df.to_excel(writer, sheet_name='Not Interfaced Orders', index=False)
             
             # Sheet 5: Summary Statistics
