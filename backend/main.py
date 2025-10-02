@@ -1160,10 +1160,17 @@ def process_upload_background(task_id: str, file_content: bytes, filename: str, 
         interface_results = {}
         total_orders = len(all_order_data)
         
-        # OPTIMIZED: Smaller chunk size for better timeout handling
-        EXTERNAL_CHUNK_SIZE = 100  # Reduced from 10000 for better timeout handling
+        # ADAPTIVE: Dynamic chunk size based on total orders
+        if total_orders < 500:
+            EXTERNAL_CHUNK_SIZE = 100
+        elif total_orders < 2000:
+            EXTERNAL_CHUNK_SIZE = 200
+        elif total_orders < 10000:
+            EXTERNAL_CHUNK_SIZE = 500
+        else:
+            EXTERNAL_CHUNK_SIZE = 1000  # Large files: bigger chunks for efficiency
         
-        add_upload_log(task_id, "info", f"🚀 Processing {total_orders} orders with optimized chunk size: {EXTERNAL_CHUNK_SIZE}")
+        add_upload_log(task_id, "info", f"🚀 Processing {total_orders} orders with adaptive chunk size: {EXTERNAL_CHUNK_SIZE}")
         
         for marketplace, marketplace_orders in orders_by_marketplace.items():
             # Extract order numbers for this marketplace
@@ -1174,10 +1181,15 @@ def process_upload_background(task_id: str, file_content: bytes, filename: str, 
                 
                 # OPTIMIZED: Only log for large datasets or when significant progress
                 if total_chunks > 1:
-                    add_upload_log(task_id, "info", f"📊 Processing {len(order_numbers_list)} orders for {marketplace} in {total_chunks} chunks")
+                    add_upload_log(task_id, "info", f"📊 Processing {len(order_numbers_list)} orders for {marketplace} in {total_chunks} chunks (chunk size: {EXTERNAL_CHUNK_SIZE})")
                 
                 for i in range(0, len(order_numbers_list), EXTERNAL_CHUNK_SIZE):
                     chunk_order_numbers = order_numbers_list[i:i + EXTERNAL_CHUNK_SIZE]
+                    chunk_num = (i // EXTERNAL_CHUNK_SIZE) + 1
+                    
+                    # Progress logging for large uploads (every chunk for files >5000 orders)
+                    if total_orders > 5000:
+                        add_upload_log(task_id, "info", f"🔄 {marketplace} - Processing chunk {chunk_num}/{total_chunks} ({len(chunk_order_numbers)} orders)...")
                     
                     try:
                         # Add timeout protection using threading.Timer
