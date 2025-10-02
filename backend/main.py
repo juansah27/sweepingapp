@@ -5072,7 +5072,7 @@ def get_unique_values(
     field: str = Query(..., description="Field name to get unique values for"),
     db: Session = Depends(get_db)
 ):
-    """Get unique values for a specific field from uploaded_orders table"""
+    """Get unique values for a specific field from clean_orders view"""
     try:
         # Map field names to actual column names
         field_mapping = {
@@ -5091,11 +5091,19 @@ def get_unique_values(
         if field not in field_mapping:
             raise HTTPException(status_code=400, detail=f"Invalid field: {field}")
         
-        # Get unique values for the field using SQL query
+        # Get unique values for the field using SQL query from clean_orders view
         column_name = field_mapping[field]
-        query = f'SELECT DISTINCT "{column_name}" FROM uploaded_orders WHERE "{column_name}" IS NOT NULL AND "{column_name}" != \'\' ORDER BY "{column_name}"'
         
-        unique_results = db.execute(text(query)).fetchall()
+        # Try clean_orders view first, fallback to uploaded_orders if view doesn't exist
+        try:
+            query = f'SELECT DISTINCT "{column_name}" FROM clean_orders WHERE "{column_name}" IS NOT NULL AND "{column_name}" != \'\' ORDER BY "{column_name}"'
+            unique_results = db.execute(text(query)).fetchall()
+            table_used = "clean_orders"
+        except Exception as view_error:
+            print(f"⚠️ clean_orders view not available, falling back to uploaded_orders: {view_error}")
+            query = f'SELECT DISTINCT "{column_name}" FROM uploaded_orders WHERE "{column_name}" IS NOT NULL AND "{column_name}" != \'\' ORDER BY "{column_name}"'
+            unique_results = db.execute(text(query)).fetchall()
+            table_used = "uploaded_orders"
         
         # Flatten the results
         result = [row[0] for row in unique_results if row[0]]
@@ -5104,7 +5112,7 @@ def get_unique_values(
             "field": field,
             "values": result,
             "count": len(result),
-            "table_used": "uploaded_orders"
+            "table_used": table_used
         }
         
     except Exception as e:
@@ -5302,10 +5310,14 @@ def get_orders_list(
             if clean_count == 0:
                 return {
                     "orders": [],
-                    "total_count": 0,
-                    "page": page,
-                    "page_size": page_size,
-                    "total_pages": 0,
+                    "pagination": {
+                        "current_page": page,
+                        "page_size": page_size,
+                        "total_count": 0,
+                        "total_pages": 0,
+                        "has_next": False,
+                        "has_prev": False
+                    },
                     "message": "No data available. Please create clean_orders view first."
                 }
             
@@ -5315,10 +5327,14 @@ def get_orders_list(
             print(f"❌ Error accessing clean_orders view: {e}")
             return {
                 "orders": [],
-                "total_count": 0,
-                "page": page,
-                "page_size": page_size,
-                "total_pages": 0,
+                "pagination": {
+                    "current_page": page,
+                    "page_size": page_size,
+                    "total_count": 0,
+                    "total_pages": 0,
+                    "has_next": False,
+                    "has_prev": False
+                },
                 "message": "Clean orders view not available. Please create it first."
             }
         
