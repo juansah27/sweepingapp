@@ -98,11 +98,16 @@ SELECT
     "Brand" as brand,
     "OrderNumber" as order_number,
     "OrderStatus" as order_status,
+    "AWB" as awb,
+    "Transporter" as transporter,
+    "OrderDate" as order_date,
+    "SLA" as sla,
     "Batch" as batch,
     "PIC" as pic,
     "UploadDate" as upload_date,
-    "Remarks" as remarks,
+    "Remarks" as remark,
     "InterfaceStatus" as interface_status,
+    "TaskId" as task_id,
     "OrderNumberFlexo" as order_number_flexo,
     "OrderStatusFlexo" as order_status_flexo
 FROM uploaded_orders 
