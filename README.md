@@ -22,7 +22,15 @@ A modern web application built with FastAPI (backend) and React (frontend) for e
 
 ## 🔥 Recent Updates (Latest)
 
-### Latest Fixes (Current Session - Production Deployment)
+### Latest Fixes (Current Session - Production Deployment + Dashboard Views)
+- ✅ **Dashboard Views Complete Fix**: Fixed all 10 dashboard views with correct column names and structure
+- ✅ **OrdersList Pagination Fix**: Resolved "Cannot read properties of undefined (reading 'current_page')" error
+- ✅ **Clean Orders View**: Added deduplicated orders view for consistent data display
+- ✅ **Dashboard View Column Fixes**: Fixed 6 views with column name mismatches (status, count, total_uploads, etc)
+- ✅ **Comprehensive SQL Script**: Created `create_all_dashboard_views.sql` with DROP CASCADE for safe recreation
+- ✅ **Not Interfaced Orders View**: Added missing columns (awb, transporter, order_date, sla, task_id)
+- ✅ **Frontend Error Handling**: Improved empty unique values handling (no false errors)
+- ✅ **View Recreation Process**: Step-by-step guide for dropping and recreating all views
 - ✅ **Fully Adaptive Chunking (v2.8)**: 10-12x faster upload for large files (14669 orders: 2-3 min → 10-15 sec)
 - ✅ **Nested Chunk Optimization**: External DB queries now use adaptive chunk size (100-1000 based on file size)
 - ✅ **Smart Performance Scaling**: Automatic chunk size adjustment (500→100, 2000→200, 10000→500, >10000→1000)
@@ -2701,7 +2709,66 @@ docker compose restart backend
 docker compose ps
 ```
 
-#### 14. SKU Comparison Showing Many Mismatches
+#### 14. Dashboard Views Missing or Returning Errors
+**Error:** `relation "dashboard_stats" does not exist` or `column "status" does not exist`
+
+**Cause:** Views were dropped during ALTER TABLE or not created during backend startup
+
+**Solution:** Recreate all dashboard views
+```bash
+cd ~/sweepingapp && \
+git pull origin main && \
+docker compose stop backend && \
+docker compose exec -T postgres psql -U sweeping_user -d sweeping_apps < backend/create_all_dashboard_views.sql && \
+docker compose start backend && \
+sleep 10 && \
+echo "✅ All dashboard views recreated!" && \
+docker compose ps
+```
+
+**What This Creates:**
+- ✅ `clean_orders` - Deduplicated orders view
+- ✅ `dashboard_marketplace_distribution` - Marketplace breakdown
+- ✅ `dashboard_batch_distribution` - Batch statistics
+- ✅ `dashboard_pic_performance` - PIC performance metrics
+- ✅ `dashboard_recent_uploads` - Recent upload history
+- ✅ `dashboard_not_interfaced_orders` - Pending interface orders
+- ✅ `dashboard_daily_evolution` - Daily trends
+- ✅ `dashboard_hourly_evolution` - Hourly trends
+- ✅ `dashboard_interface_status_summary` - Interface status breakdown
+- ✅ `dashboard_order_status_summary` - Order status breakdown
+
+**Verify Views Exist:**
+```bash
+docker compose exec postgres psql -U sweeping_user -d sweeping_apps -c "\dv dashboard_*"
+```
+
+#### 15. OrdersList Page Shows Pagination Error
+**Error:** `TypeError: Cannot read properties of undefined (reading 'current_page')`
+
+**Cause:** Backend API returning inconsistent pagination format or `clean_orders` view missing
+
+**Solution:**
+```bash
+# Ensure clean_orders view exists
+cd ~/sweepingapp && \
+git pull origin main && \
+docker compose stop backend && \
+docker compose exec -T postgres psql -U sweeping_user -d sweeping_apps < backend/create_all_dashboard_views.sql && \
+docker compose build --no-cache frontend && \
+docker compose up -d && \
+echo "✅ OrdersList fixed!"
+```
+
+**Alternative Quick Fix (Frontend Only):**
+```bash
+cd ~/sweepingapp && \
+git pull origin main && \
+docker compose build frontend && \
+docker compose restart frontend
+```
+
+#### 16. SKU Comparison Showing Many Mismatches
 **Issue:** High mismatch count due to SKU order differences
 
 **Solution:** Create smart comparison view (already fixed)
@@ -2843,7 +2910,13 @@ This project is licensed under the MIT License.
 
 ## Version History
 
-### v2.8 - Fully Adaptive Performance (Current)
+### v2.8 - Fully Adaptive Performance + Dashboard Views Fix (Current)
+- ✅ **Dashboard Views Complete Fix**: Fixed all 10 dashboard views with correct column names
+- ✅ **OrdersList Pagination**: Resolved pagination errors with consistent backend response format
+- ✅ **Clean Orders View**: Added deduplicated view for consistent data display
+- ✅ **View Recreation Script**: Comprehensive SQL script (`create_all_dashboard_views.sql`) for safe view management
+- ✅ **Column Name Consistency**: Fixed 6 views with API-database column mismatches
+- ✅ **Frontend Error Handling**: Improved handling of empty unique values
 - ✅ **Fully Adaptive Chunking**: 10-12x faster upload for large files (14669 orders: 2-3 min → 10-15 sec)
 - ✅ **Nested Optimization**: Both outer and inner chunks now use adaptive sizing (100-1000)
 - ✅ **Smart Scaling Logic**: < 500 → 100, 500-2000 → 200, 2000-10000 → 500, > 10000 → 1000
