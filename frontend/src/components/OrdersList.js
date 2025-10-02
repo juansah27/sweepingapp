@@ -492,12 +492,16 @@ const OrdersList = () => {
       console.log(`📊 Response.values:`, response?.values);
       console.log(`📊 Response.values length:`, response?.values?.length);
       
-      if (response && response.values && response.values.length > 0) {
+      if (response && response.values) {
         setUniqueValues(prev => ({
           ...prev,
           [field]: response.values
         }));
-        console.log(`✅ Successfully loaded ${response.values.length} unique values for ${field}`);
+        if (response.values.length > 0) {
+          console.log(`✅ Successfully loaded ${response.values.length} unique values for ${field}`);
+        } else {
+          console.log(`ℹ️ No data available for ${field} filter (empty dataset)`);
+        }
       } else {
         console.log(`⚠️ No values returned for ${field}, trying fallback...`);
         throw new Error(`No values returned for ${field}`);
