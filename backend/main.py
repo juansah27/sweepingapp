@@ -6415,19 +6415,29 @@ async def update_not_interfaced_order_remark(
     try:
         logger.info(f"Updating not interfaced order remark for order_number={order_number}, marketplace={marketplace}, remark={remark}")
         
+        # Strip marketplace prefix from order_number if present
+        # Frontend may send "SHOPEE2510010NCNX836" but DB stores "2510010NCNX836"
+        clean_order_number = order_number
+        marketplace_upper = marketplace.upper()
+        if order_number.upper().startswith(marketplace_upper):
+            clean_order_number = order_number[len(marketplace_upper):]
+            logger.info(f"Stripped marketplace prefix: {order_number} → {clean_order_number}")
+        
         # Find the order in UploadedOrder table (case-insensitive for marketplace)
         order = db.query(UploadedOrder).filter(
-            UploadedOrder.OrderNumber == order_number,
+            UploadedOrder.OrderNumber == clean_order_number,
             func.upper(UploadedOrder.Marketplace) == marketplace.upper()
         ).first()
         
         if not order:
-            # Debug: Check if order exists with different criteria
-            logger.warning(f"Order not found with exact match. Searching alternatives...")
-            similar_orders = db.query(UploadedOrder).filter(
-                UploadedOrder.OrderNumber.like(f'%{order_number}%')
-            ).limit(5).all()
-            logger.warning(f"Found {len(similar_orders)} similar orders")
+            # Try with original order_number as fallback
+            order = db.query(UploadedOrder).filter(
+                UploadedOrder.OrderNumber == order_number,
+                func.upper(UploadedOrder.Marketplace) == marketplace.upper()
+            ).first()
+            
+        if not order:
+            logger.warning(f"Order not found: {order_number} (cleaned: {clean_order_number}) in {marketplace}")
             raise HTTPException(status_code=404, detail=f"Order not found: {order_number} in {marketplace}")
         
         # Update the remark
