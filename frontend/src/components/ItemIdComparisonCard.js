@@ -36,7 +36,7 @@ import * as XLSX from 'xlsx';
 
 const { TabPane } = Tabs;
 
-const ItemIdComparisonCard = () => {
+const ItemIdComparisonCard = ({ dateRange }) => {
   const [comparisonData, setComparisonData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -58,7 +58,17 @@ const ItemIdComparisonCard = () => {
   const fetchComparisonData = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/api/itemid-comparison');
+      
+      // Build params with date range if available
+      const params = {};
+      if (dateRange && dateRange.length === 2) {
+        const startDate = encodeURIComponent(dateRange[0].format('YYYY-MM-DDTHH:mm:ss') + '+07:00');
+        const endDate = encodeURIComponent(dateRange[1].format('YYYY-MM-DDTHH:mm:ss') + '+07:00');
+        params.start_date = startDate;
+        params.end_date = endDate;
+      }
+      
+      const response = await api.get('/api/itemid-comparison', { params });
       setComparisonData(response.data);
       setError(null);
     } catch (err) {
@@ -71,7 +81,7 @@ const ItemIdComparisonCard = () => {
 
   useEffect(() => {
     fetchComparisonData();
-  }, []);
+  }, [dateRange]); // Re-fetch when dateRange changes
 
   // Fetch breakdown data
   const fetchBreakdownData = async (page = 1, status = selectedStatus, search = searchText) => {

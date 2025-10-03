@@ -1663,7 +1663,7 @@ const Dashboard = () => {
       {/* SKU Comparison Card */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24}>
-          <ItemIdComparisonCard />
+          <ItemIdComparisonCard dateRange={dateRange} />
         </Col>
       </Row>
 

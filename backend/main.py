@@ -10540,17 +10540,32 @@ async def upload_finalize(
 
 @app.get("/api/itemid-comparison")
 def get_itemid_comparison(
+    start_date: Optional[str] = Query(None, description="Start date (ISO format with timezone)"),
+    end_date: Optional[str] = Query(None, description="End date (ISO format with timezone)"),
     current_user: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get ItemId vs ItemIdFlexo comparison statistics"""
+    """Get ItemId vs ItemIdFlexo comparison statistics with optional date filter"""
     try:
+        # Build WHERE clause for date filter
+        date_filter = ""
+        params = {}
+        
+        if start_date and end_date:
+            # Parse timezone-aware dates
+            start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            date_filter = ' WHERE "UploadDate" BETWEEN :start_date AND :end_date'
+            params['start_date'] = start_dt
+            params['end_date'] = end_dt
+        
         # Get comparison statistics
-        comparison_sql = """
+        comparison_sql = f"""
         SELECT 
             comparison_status,
             COUNT(*) as count
         FROM itemid_comparison
+        {date_filter}
         GROUP BY comparison_status
         ORDER BY 
             CASE comparison_status
@@ -10563,11 +10578,11 @@ def get_itemid_comparison(
             END;
         """
         
-        result = db.execute(text(comparison_sql))
+        result = db.execute(text(comparison_sql), params)
         comparison_data = result.fetchall()
         
         # Get recent mismatches for details
-        mismatch_sql = """
+        mismatch_sql = f"""
         SELECT 
             "OrderNumber",
             "Marketplace",
@@ -10577,11 +10592,12 @@ def get_itemid_comparison(
             "UploadDate"
         FROM itemid_comparison
         WHERE comparison_status = 'Mismatch'
+        {date_filter.replace('WHERE', 'AND') if date_filter else ''}
         ORDER BY "UploadDate" DESC
         LIMIT 10;
         """
         
-        result = db.execute(text(mismatch_sql))
+        result = db.execute(text(mismatch_sql), params)
         mismatch_details = result.fetchall()
         
         # Format response
