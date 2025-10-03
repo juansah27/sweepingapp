@@ -72,7 +72,7 @@ services:
     restart: unless-stopped
     ports:
       - "0.0.0.0:80:80"
-      - "0.0.0.0:443:443"
+      # - "0.0.0.0:443:443"  # Uncomment when SSL certificates are available
     volumes:
       - ./ssl:/etc/nginx/ssl:ro
     depends_on:

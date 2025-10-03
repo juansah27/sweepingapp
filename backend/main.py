@@ -10643,6 +10643,111 @@ def get_itemid_comparison(
             }
         }
 
+@app.get("/api/itemid-comparison/breakdown")
+def get_itemid_comparison_breakdown(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=1000, description="Items per page"),
+    status_filter: Optional[str] = Query(None, description="Filter by comparison status"),
+    order_number: Optional[str] = Query(None, description="Search by order number"),
+    current_user: str = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get detailed breakdown of SKU comparison with pagination and filters"""
+    try:
+        # Base query
+        base_query = """
+        SELECT 
+            "Id",
+            "OrderNumber",
+            "Marketplace",
+            "Brand",
+            excel_itemid,
+            external_itemid,
+            excel_itemid_normalized,
+            external_itemid_normalized,
+            comparison_status,
+            "UploadDate",
+            "InterfaceStatus"
+        FROM itemid_comparison
+        WHERE 1=1
+        """
+        
+        count_query = "SELECT COUNT(*) FROM itemid_comparison WHERE 1=1"
+        
+        params = {}
+        conditions = []
+        
+        # Apply filters
+        if status_filter:
+            conditions.append("comparison_status = :status")
+            params['status'] = status_filter
+        
+        if order_number:
+            conditions.append("\"OrderNumber\" ILIKE :order_number")
+            params['order_number'] = f"%{order_number}%"
+        
+        # Add conditions to queries
+        if conditions:
+            where_clause = " AND " + " AND ".join(conditions)
+            base_query += where_clause
+            count_query += where_clause
+        
+        # Get total count
+        total_count = db.execute(text(count_query), params).scalar()
+        
+        # Calculate offset
+        offset = (page - 1) * page_size
+        
+        # Add pagination
+        base_query += ' ORDER BY "UploadDate" DESC LIMIT :limit OFFSET :offset'
+        params['limit'] = page_size
+        params['offset'] = offset
+        
+        # Execute query
+        result = db.execute(text(base_query), params).fetchall()
+        
+        # Format response
+        orders_data = []
+        for row in result:
+            orders_data.append({
+                "id": row[0],
+                "order_number": row[1],
+                "marketplace": row[2],
+                "brand": row[3],
+                "excel_itemid": row[4],
+                "external_itemid": row[5],
+                "excel_itemid_normalized": row[6],
+                "external_itemid_normalized": row[7],
+                "comparison_status": row[8],
+                "upload_date": row[9].isoformat() if row[9] else None,
+                "interface_status": row[10]
+            })
+        
+        return {
+            "success": True,
+            "data": orders_data,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total": total_count,
+                "total_pages": (total_count + page_size - 1) // page_size
+            }
+        }
+        
+    except Exception as e:
+        print(f"❌ Error getting SKU comparison breakdown: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "data": [],
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total": 0,
+                "total_pages": 0
+            }
+        }
+
 @app.get("/api/summary-orders")
 def get_summary_orders(
     current_user: str = Depends(get_current_user),

@@ -338,10 +338,10 @@ const Dashboard = () => {
     return `${startDate.format('YYYY-MM-DD')} - ${endDate.format('YYYY-MM-DD')}`;
   };
 
-  // Reset date filter to show all data
-  const resetDateFilter = () => {
-    setDateRange(null); // Clear date filter to show all data
-  };
+  // Reset date filter to show all data - DISABLED to prevent heavy queries on million rows
+  // const resetDateFilter = () => {
+  //   setDateRange(null); // Clear date filter to show all data
+  // };
 
   // Fetch all dashboard data with optimized loading
   const fetchDashboardData = useCallback(async (showLoading = true, forceRefresh = false) => {
@@ -537,11 +537,11 @@ const Dashboard = () => {
     useEffect(() => {
       const handleUploadCompleted = (event) => {
         console.log('Upload completed, refreshing dashboard data...', event.detail);
-        // Clear any date filters to show all data after upload
-        setDateRange(null);
+        // Keep current date filter to prevent heavy queries on million rows
+        // Date range is NOT cleared after upload
         // Force a complete refresh of all dashboard data
         setTimeout(() => {
-          // Force refresh without any date parameters to get all data
+          // Force refresh with current date parameters
           fetchDashboardData(false, true); // Don't show loading spinner, but force refresh
         }, 2000); // Increased delay to ensure backend has fully processed the upload
       };
@@ -1333,14 +1333,13 @@ const Dashboard = () => {
                     const startDate = dates[0].startOf('day');
                     const endDate = dates[1].endOf('day');
                     setDateRange([startDate, endDate]);
-                  } else if (!dates) {
-                    resetDateFilter();
                   }
+                  // Clear filter disabled to prevent heavy queries on million rows
                 }}
                 onOk={() => fetchDashboardData(false)}
                 style={{ width: 350 }}
                 placeholder={['Start Date', 'End Date']}
-                allowClear
+                allowClear={false}
                 suffixIcon={<CalendarOutlined />}
               />
               
@@ -1370,7 +1369,7 @@ const Dashboard = () => {
                 icon={<ReloadOutlined />} 
                 onClick={() => {
                   console.log('=== REFRESH ALL CLICKED ===');
-                  setDateRange(null);
+                  // Keep current date filter to prevent heavy queries on million rows
                   fetchDashboardData(true, true);
                 }}
                 className="dashboard-refresh-btn"

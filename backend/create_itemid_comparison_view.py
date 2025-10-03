@@ -27,7 +27,7 @@ def get_database_url():
     
     return f"postgresql://{postgres_user}:{postgres_password}@{postgres_host}:{postgres_port}/{postgres_db}"
 
-def normalize_sku_string(sku_string):
+def normalize_sku_string():
     """
     SQL function to normalize SKU string by sorting items
     Input: "NA18231210316,8994460553195"
