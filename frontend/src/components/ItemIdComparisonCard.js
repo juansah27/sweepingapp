@@ -46,6 +46,7 @@ const ItemIdComparisonCard = () => {
   const [breakdownModalVisible, setBreakdownModalVisible] = useState(false);
   const [breakdownData, setBreakdownData] = useState([]);
   const [breakdownLoading, setBreakdownLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [searchText, setSearchText] = useState('');
   const [pagination, setPagination] = useState({
@@ -137,10 +138,40 @@ const ItemIdComparisonCard = () => {
     fetchBreakdownData(1, selectedStatus, value);
   };
 
-  // Export to Excel
-  const handleExportExcel = () => {
+  // Export to Excel - Fetch ALL data for selected status
+  const handleExportExcel = async () => {
     try {
-      const exportData = breakdownData.map(item => ({
+      setExportLoading(true);
+      
+      notification.info({
+        message: 'Exporting...',
+        description: 'Fetching all data for export. Please wait...',
+        duration: 2
+      });
+
+      // Fetch ALL data (no pagination limit)
+      const params = {
+        page: 1,
+        page_size: 999999 // Get all data
+      };
+      
+      if (selectedStatus !== 'All') {
+        params.status_filter = selectedStatus;
+      }
+      
+      if (searchText) {
+        params.order_number = searchText;
+      }
+      
+      const response = await api.get('/api/itemid-comparison/breakdown', { params });
+      
+      if (!response.data.success) {
+        throw new Error('Failed to fetch export data');
+      }
+
+      const allData = response.data.data;
+      
+      const exportData = allData.map(item => ({
         'Order Number': item.order_number,
         'Marketplace': item.marketplace,
         'Brand': item.brand,
@@ -162,7 +193,7 @@ const ItemIdComparisonCard = () => {
       
       notification.success({
         message: 'Export Successful',
-        description: `Data exported to ${filename}`
+        description: `${exportData.length} rows exported to ${filename}`
       });
     } catch (err) {
       notification.error({
@@ -170,6 +201,8 @@ const ItemIdComparisonCard = () => {
         description: 'Failed to export data to Excel'
       });
       console.error('Export error:', err);
+    } finally {
+      setExportLoading(false);
     }
   };
 
@@ -458,9 +491,10 @@ const ItemIdComparisonCard = () => {
                 onClick={handleExportExcel}
                 size="small"
                 type="primary"
-                disabled={breakdownData.length === 0}
+                loading={exportLoading}
+                disabled={breakdownData.length === 0 || exportLoading}
               >
-                Export to Excel
+                {exportLoading ? 'Exporting...' : 'Export to Excel'}
               </Button>
             </div>
           }
