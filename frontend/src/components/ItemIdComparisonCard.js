@@ -62,10 +62,9 @@ const ItemIdComparisonCard = ({ dateRange }) => {
       // Build params with date range if available
       const params = {};
       if (dateRange && dateRange.length === 2) {
-        const startDate = encodeURIComponent(dateRange[0].format('YYYY-MM-DDTHH:mm:ss') + '+07:00');
-        const endDate = encodeURIComponent(dateRange[1].format('YYYY-MM-DDTHH:mm:ss') + '+07:00');
-        params.start_date = startDate;
-        params.end_date = endDate;
+        // Let axios handle URL encoding automatically
+        params.start_date = dateRange[0].format('YYYY-MM-DDTHH:mm:ss') + '+07:00';
+        params.end_date = dateRange[1].format('YYYY-MM-DDTHH:mm:ss') + '+07:00';
       }
       
       const response = await api.get('/api/itemid-comparison', { params });
