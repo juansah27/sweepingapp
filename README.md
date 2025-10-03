@@ -23,6 +23,10 @@ A modern web application built with FastAPI (backend) and React (frontend) for e
 ## 🔥 Recent Updates (Latest)
 
 ### Latest Fixes (Current Session - Production Deployment + Dashboard Views)
+- ✅ **Enhanced Database Restore Guide**: Comprehensive backup/restore with 3 methods (direct, Windows type, container copy)
+- ✅ **Windows Collation Fix**: TEMPLATE template0 solution for collation version errors
+- ✅ **Cross-Platform Backup**: Complete backup commands for Linux/Mac and Windows
+- ✅ **Troubleshooting Section**: 5+ common restore errors with solutions
 - ✅ **Dashboard Views Complete Fix**: Fixed all 10 dashboard views with correct column names and structure
 - ✅ **OrdersList Pagination Fix**: Resolved "Cannot read properties of undefined (reading 'current_page')" error
 - ✅ **Clean Orders View**: Added deduplicated orders view for consistent data display
@@ -40,7 +44,6 @@ A modern web application built with FastAPI (backend) and React (frontend) for e
 - ✅ **Frontend Health Check Fix**: Removed blocking health check dependency
 - ✅ **Backend Logs Permission Fix**: Fixed permission denied error with Docker volume
 - ✅ **Clipboard Copy Fix**: Added fallback for HTTP access (non-HTTPS environments)
-- ✅ **Database Restore Guide**: Complete PostgreSQL restore instructions
 - ✅ **ContainerConfig Error Fix**: Solution for docker-compose recreation errors
 - ✅ **PostgreSQL Connection Pool**: Increased max_connections to 200, optimized pool settings
 - ✅ **Backend Connection Optimization**: Smart pooling (5 per worker in production)
@@ -305,12 +308,15 @@ docker compose logs -f backend
 docker compose restart backend
 
 # Database backup
-docker exec sweeping-apps-postgres pg_dump -U sweeping_user sweeping_apps > backup.sql
+docker exec sweeping-apps-postgres pg_dump -U postgres sweeping_apps > backup.sql
 
 # Database restore (stop backend first)
 docker compose stop backend
-docker exec -i sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps < backup/postgres_backup_utf8.sql
+docker exec -i sweeping-apps-postgres psql -U postgres -d sweeping_apps < backup/postgres_backup_utf8.sql
 docker compose start backend
+
+# For Windows or collation errors, see comprehensive guide:
+# 📊 Database Restore Guide section below
 
 # Clean up (removes volumes - WARNING: deletes data)
 docker compose down -v
@@ -2366,14 +2372,51 @@ docker compose logs --tail=100 backend
 
 ## 📊 Database Restore Guide
 
-### Restore from Backup File
+### 📥 Create Backup
+
+**Linux/Mac:**
+```bash
+# Backup with timestamp
+docker exec sweeping-apps-postgres pg_dump -U postgres sweeping_apps > backup/backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Simple backup
+docker exec sweeping-apps-postgres pg_dump -U postgres sweeping_apps > backup/backup_new.sql
+
+# Compressed backup
+docker exec sweeping-apps-postgres pg_dump -U postgres sweeping_apps | gzip > backup/backup.sql.gz
+```
+
+**Windows:**
+```cmd
+REM Backup with timestamp (manual)
+docker exec sweeping-apps-postgres pg_dump -U postgres sweeping_apps > backup/backup_20251003.sql
+
+REM Simple backup
+docker exec sweeping-apps-postgres pg_dump -U postgres sweeping_apps > backup/backup_new.sql
+```
+
+**Verify Backup:**
+```bash
+# Check file size (should be large, 40MB+ for 163k orders)
+ls -lh backup/
+# or on Windows
+dir backup
+```
+
+---
+
+### 📤 Restore from Backup File
 
 **Prerequisites:**
-- Backup file: `backup/postgres_backup_utf8.sql`
+- Backup file: `backup/postgres_backup_utf8.sql` or your backup file
 - PostgreSQL container running
+- Stop backend to prevent connection conflicts
 
-**Step-by-Step Restore:**
+---
 
+### Method 1: Direct Restore (Linux/Mac)
+
+**Step-by-Step:**
 ```bash
 # 1. Navigate to project directory
 cd ~/sweepingapp
@@ -2382,54 +2425,166 @@ cd ~/sweepingapp
 docker compose stop backend
 
 # 3. Terminate any remaining connections
-docker exec -it sweeping-apps-postgres psql -U sweeping_user -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'sweeping_apps' AND pid <> pg_backend_pid();"
+docker exec -it sweeping-apps-postgres psql -U postgres -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'sweeping_apps' AND pid <> pg_backend_pid();"
 
 # 4. Drop and recreate database (optional - for clean restore)
-docker exec -it sweeping-apps-postgres psql -U sweeping_user -d postgres -c "DROP DATABASE sweeping_apps;"
-docker exec -it sweeping-apps-postgres psql -U sweeping_user -d postgres -c "CREATE DATABASE sweeping_apps;"
-docker exec -it sweeping-apps-postgres psql -U sweeping_user -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE sweeping_apps TO sweeping_user;"
+docker exec -it sweeping-apps-postgres psql -U postgres -c "DROP DATABASE IF EXISTS sweeping_apps;"
+docker exec -it sweeping-apps-postgres psql -U postgres -c "CREATE DATABASE sweeping_apps OWNER sweeping_user;"
 
 # 5. Restore from backup
-docker exec -i sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps < backup/postgres_backup_utf8.sql
+docker exec -i sweeping-apps-postgres psql -U postgres -d sweeping_apps < backup/postgres_backup_utf8.sql
 
 # 6. Start backend
 docker compose start backend
 
 # 7. Verify data
-docker exec -it sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps -c "SELECT COUNT(*) FROM uploaded_orders;"
+docker exec -it sweeping-apps-postgres psql -U postgres -d sweeping_apps -c "SELECT COUNT(*) FROM uploaded_orders;"
 ```
 
-**One-Liner Complete Restore:**
+**One-Liner:**
 ```bash
 cd ~/sweepingapp && \
 docker compose stop backend && \
 sleep 5 && \
-docker exec -it sweeping-apps-postgres psql -U sweeping_user -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'sweeping_apps' AND pid <> pg_backend_pid();" && \
-docker exec -it sweeping-apps-postgres psql -U sweeping_user -d postgres -c "DROP DATABASE sweeping_apps;" && \
-docker exec -it sweeping-apps-postgres psql -U sweeping_user -d postgres -c "CREATE DATABASE sweeping_apps;" && \
-docker exec -it sweeping-apps-postgres psql -U sweeping_user -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE sweeping_apps TO sweeping_user;" && \
-docker exec -i sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps < backup/postgres_backup_utf8.sql && \
+docker exec sweeping-apps-postgres psql -U postgres -c "DROP DATABASE IF EXISTS sweeping_apps;" && \
+docker exec sweeping-apps-postgres psql -U postgres -c "CREATE DATABASE sweeping_apps OWNER sweeping_user;" && \
+docker exec -i sweeping-apps-postgres psql -U postgres -d sweeping_apps < backup/postgres_backup_utf8.sql && \
 docker compose start backend && \
-sleep 10 && \
-echo "✅ Restore complete!" && \
-docker exec -it sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps -c "SELECT COUNT(*) FROM uploaded_orders;"
+echo "✅ Restore complete!"
 ```
 
-**Troubleshooting Database Restore:**
+---
 
-*Error: "database is being accessed by other users"*
+### Method 2: Windows Restore (Recommended for Windows)
+
+**Windows CMD has issues with `<` redirect, use `type` command instead:**
+
+```cmd
+REM 1. Stop backend
+docker compose stop backend
+
+REM 2. Drop and recreate database
+docker exec sweeping-apps-postgres psql -U postgres -c "DROP DATABASE IF EXISTS sweeping_apps;"
+docker exec sweeping-apps-postgres psql -U postgres -c "CREATE DATABASE sweeping_apps OWNER sweeping_user;"
+
+REM 3. Restore using type command
+type backup\backup_20251003_105458.sql | docker exec -i sweeping-apps-postgres psql -U postgres -d sweeping_apps
+
+REM 4. Start backend
+docker compose start backend
+
+REM 5. Verify
+docker exec sweeping-apps-postgres psql -U postgres -d sweeping_apps -c "SELECT COUNT(*) FROM uploaded_orders;"
+```
+
+---
+
+### Method 3: Copy to Container (Best for Large Files or Collation Issues)
+
+**This method works on both Linux/Mac and Windows:**
+
+```bash
+# 1. Stop backend
+docker compose stop backend
+
+# 2. Copy backup file to container
+docker cp backup/backup_20251003_105458.sql sweeping-apps-postgres:/tmp/backup.sql
+
+# 3. Create user if needed
+docker exec sweeping-apps-postgres psql -U postgres -c "CREATE USER sweeping_user WITH PASSWORD 'sweeping_password' SUPERUSER;"
+
+# 4. Create database with TEMPLATE template0 (fixes collation issues)
+docker exec sweeping-apps-postgres psql -U postgres -c "DROP DATABASE IF EXISTS sweeping_apps;"
+docker exec sweeping-apps-postgres psql -U postgres -c "CREATE DATABASE sweeping_apps OWNER sweeping_user TEMPLATE template0;"
+
+# 5. Restore from inside container
+docker exec sweeping-apps-postgres psql -U postgres -d sweeping_apps -f /tmp/backup.sql
+
+# 6. Start backend
+docker compose start backend
+
+# 7. Verify data
+docker exec sweeping-apps-postgres psql -U postgres -d sweeping_apps -c "SELECT COUNT(*) FROM uploaded_orders;"
+docker exec sweeping-apps-postgres psql -U postgres -d sweeping_apps -c "SELECT \"Brand\", \"Marketplace\", COUNT(*) FROM uploaded_orders GROUP BY \"Brand\", \"Marketplace\" LIMIT 5;"
+```
+
+**Windows:**
+```cmd
+docker compose stop backend
+docker cp backup\backup_20251003_105458.sql sweeping-apps-postgres:/tmp/backup.sql
+docker exec sweeping-apps-postgres psql -U postgres -c "CREATE USER sweeping_user WITH PASSWORD 'sweeping_password' SUPERUSER;"
+docker exec sweeping-apps-postgres psql -U postgres -c "CREATE DATABASE sweeping_apps OWNER sweeping_user TEMPLATE template0;"
+docker exec sweeping-apps-postgres psql -U postgres -d sweeping_apps -f /tmp/backup.sql
+docker compose start backend
+```
+
+---
+
+### 🔧 Troubleshooting Database Restore
+
+#### Error: "role sweeping_user does not exist"
+```bash
+# Create user first
+docker exec sweeping-apps-postgres psql -U postgres -c "CREATE USER sweeping_user WITH PASSWORD 'sweeping_password' SUPERUSER;"
+```
+
+#### Error: "database is being accessed by other users"
 ```bash
 # Stop backend first
 docker compose stop backend
 
+# Terminate connections
+docker exec sweeping-apps-postgres psql -U postgres -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'sweeping_apps' AND pid <> pg_backend_pid();"
+
 # Then retry restore
 ```
 
-*Error: "database already exists"*
+#### Error: "template database template1 has a collation version"
+**This is a collation version mismatch error (common on Windows).**
+
+**Solution: Use TEMPLATE template0 (bypasses collation check):**
 ```bash
-# Either drop first, or skip to restore step
-docker exec -i sweeping-apps-postgres psql -U sweeping_user -d sweeping_apps < backup/postgres_backup_utf8.sql
+# Method 1: Fix collation
+docker exec sweeping-apps-postgres psql -U postgres -d template1 -c "ALTER DATABASE template1 REFRESH COLLATION VERSION;"
+docker exec sweeping-apps-postgres psql -U postgres -d postgres -c "ALTER DATABASE postgres REFRESH COLLATION VERSION;"
+
+# Method 2: Use template0 (recommended)
+docker exec sweeping-apps-postgres psql -U postgres -c "CREATE DATABASE sweeping_apps OWNER sweeping_user TEMPLATE template0;"
 ```
+
+#### Error: Windows "The process tried to write to a nonexistent pipe"
+**Use Method 2 (type command) or Method 3 (copy to container) instead of direct `<` redirect.**
+
+#### Error: "database already exists"
+```bash
+# Drop first, then create
+docker exec sweeping-apps-postgres psql -U postgres -c "DROP DATABASE IF EXISTS sweeping_apps;"
+docker exec sweeping-apps-postgres psql -U postgres -c "CREATE DATABASE sweeping_apps OWNER sweeping_user;"
+```
+
+---
+
+### 📊 Verify Restore Success
+
+```bash
+# Check total orders
+docker exec sweeping-apps-postgres psql -U postgres -d sweeping_apps -c "SELECT COUNT(*) FROM uploaded_orders;"
+
+# Check by brand and marketplace
+docker exec sweeping-apps-postgres psql -U postgres -d sweeping_apps -c "SELECT \"Brand\", \"Marketplace\", COUNT(*) FROM uploaded_orders GROUP BY \"Brand\", \"Marketplace\" ORDER BY COUNT(*) DESC LIMIT 10;"
+
+# Check recent uploads
+docker exec sweeping-apps-postgres psql -U postgres -d sweeping_apps -c "SELECT \"Brand\", \"Marketplace\", \"UploadDate\" FROM uploaded_orders ORDER BY \"UploadDate\" DESC LIMIT 5;"
+
+# Check database size
+docker exec sweeping-apps-postgres psql -U postgres -c "SELECT pg_size_pretty(pg_database_size('sweeping_apps'));"
+```
+
+**Expected Results (for 163k+ orders backup):**
+- Total orders: ~163,000+
+- Database size: ~100-200 MB
+- Multiple brands and marketplaces
+- All tables, views, indexes restored
 
 ## 🐧 Linux Docker Troubleshooting
 
